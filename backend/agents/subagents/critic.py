@@ -14,6 +14,7 @@ def critic_agent(
     researcher_result: str,
     analyst_result: str,
     user_conditions: str,
+    previous_findings: str = "",
 ) -> str:
     prompt = (
         load_prompt("critic")
@@ -21,5 +22,6 @@ def critic_agent(
         .replace("{planner_result}", planner_result)
         .replace("{researcher_result}", researcher_result)
         .replace("{analyst_result}", analyst_result)
+        .replace("{previous_findings}", previous_findings)
     )
     return call_llm(MODEL_STRONG, prompt, max_tokens=1024)

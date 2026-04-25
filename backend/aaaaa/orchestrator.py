@@ -14,39 +14,38 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 
 from backend.config import LOGS_DIR, MODEL_STRONG, OPENROUTER_API_KEY, OPENROUTER_BASE_URL, PROMPTS_DIR
-from backend.agents.llm import set_usage_callback
+from aaaaa.llm import set_usage_callback
 
-from backend.agents.subagents.planner import planner_agent
-from backend.agents.subagents.researcher import researcher_agent
-from backend.agents.subagents.analyst import analyst_agent
-from backend.agents.subagents.critic import critic_agent
-from backend.agents.subagents.gate import gate_agent
-from backend.agents.subagents.prd_writer import prd_writer_agent
-from backend.agents.utils import check_loop_limit as _check_limit_fn
+from aaaaa.agents.planner import planner_agent 
+from aaaaa.agents.researcher import researcher_agent
+from aaaaa.agents.analyst import analyst_agent
+from aaaaa.agents.critic import critic_agent
+from aaaaa.agents.gate import gate_agent
+from aaaaa.agents.prd_writer import prd_writer_agent
+from aaaaa.utils import check_loop_limit as _check_limit_fn
 
 
 # ── Module state (initialized fresh in each run()) ───────────────────────────
-# run() 호출마다 초기화되는 전역 상태 (멀티 run 지원을 위해 run() 시작 시 리셋)
+
 _logger: logging.Logger | None = None
-_user_conditions: str = "" # 사용자 입력 조건
-_loop_history: list = [] # 루프별 결과 누적
-_prd_result: str = "" # 최종 PRD 텍스트
-_outer: int = 1 # 외부 루프 카운터 (Gate)
-_inner: int = 0 # 내부 루프 카운터 (Critic)
-_last_critic_result: str = "" # FORCE_GATE 시 재사용할 마지막 Critic 결과
-_current_topic: str = "" # 현재 진행 중인 주제
+_user_conditions: str = ""
+_loop_history: list = []
+_prd_result: str = ""
+_outer: int = 1
+_inner: int = 0
+_last_critic_result: str = ""
+_current_topic: str = ""
 
 
 # ── Logger setup ──────────────────────────────────────────────────────────────
 
 def _setup_logger(job_id: str) -> logging.Logger:
-    # job_id별 로그 파일 + 콘솔 동시 출력 설정
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
     log_path = LOGS_DIR / f"run_{job_id}.log"
 
     logger = logging.getLogger(f"ideavault.{job_id}")
     logger.setLevel(logging.DEBUG)
-    logger.propagate = False # 상위 루트 logger로 전파 방지
+    logger.propagate = False
 
     fmt = logging.Formatter("%(asctime)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
@@ -64,7 +63,6 @@ def _setup_logger(job_id: str) -> logging.Logger:
 # ── Wrapped tool call with logging ────────────────────────────────────────────
 
 def _call(logger: logging.Logger, agent: str, fn: Callable, **kwargs) -> str:
-    # 에이전트 호출을 래핑해 입출력 로깅 및 에러 처리를 일원화
     logger.info(f"[{agent}] CALL | { {k: str(v)[:120] for k, v in kwargs.items()} }")
     try:
         result: str = fn(**kwargs)
@@ -273,7 +271,6 @@ def check_loop_limit() -> str:
     _logger.info(f"[check_loop_limit] outer={_outer} inner={_inner} → {status}")
 
     if status == "FORCE_GATE":
-        # 내부 루프 한계 도달 → Gate를 강제 실행해 주제 계속 여부 결정
         gate_decisions = "\n".join(
             f"루프 {e['loop']}: {e['gate_decision']}"
             for e in _loop_history if e.get("gate_decision")
@@ -283,7 +280,7 @@ def check_loop_limit() -> str:
                             user_conditions=_user_conditions,
                             gate_decisions=gate_decisions)
         m = re.search(r"결정:\s*(REFINE|PIVOT|DONE)", gate_result)
-        decision = m.group(1) if m else "PIVOT" # 파싱 실패 시 PIVOT으로 안전하게 처리
+        decision = m.group(1) if m else "PIVOT"
 
         entry = next((e for e in _loop_history if e["loop"] == _outer), None)
         if entry is None:
@@ -296,7 +293,6 @@ def check_loop_limit() -> str:
         return f"FORCE_GATE 처리 완료 | Gate 결정: {decision}\n{gate_result}"
 
     if status == "FORCE_PRD":
-        # 외부 루프 한계 도달 → PRD를 강제 작성하고 종료
         prd = _call(_logger, "prd_writer(forced)", prd_writer_agent,
                     user_conditions=_user_conditions,
                     final_loop=json.dumps(_loop_history, ensure_ascii=False))
@@ -322,11 +318,9 @@ async def run(user_conditions: str, job_id: str | None = None) -> dict:
     """
     global _logger, _user_conditions, _loop_history, _prd_result, _outer, _inner, _last_critic_result, _current_topic
 
-    # job_id 미전달 시 랜덤 8자리 생성
     if not job_id:
         job_id = uuid.uuid4().hex[:8]
 
-    # 전역 상태 초기화 (이전 run 잔여값 제거)
     _logger = _setup_logger(job_id)
     _user_conditions = user_conditions
     _loop_history = []
@@ -338,27 +332,23 @@ async def run(user_conditions: str, job_id: str | None = None) -> dict:
 
     _logger.info(f"[orchestrator] START | job_id={job_id}")
 
-    # 토큰 사용량을 로그 파일에 기록하는 콜백 등록
     set_usage_callback(
         lambda model, prompt, completion, total:
             _logger.info(f"[tokens] {model} | prompt={prompt} completion={completion} total={total}")
     )
 
-    # orchestrator.md 프롬프트에 사용자 조건 주입
     system_prompt = (
         (PROMPTS_DIR / "orchestrator.md")
         .read_text(encoding="utf-8")
         .replace("{user_conditions}", user_conditions)
     )
 
-    # OpenRouter를 백엔드로 사용하는 LLM 인스턴스 생성
     llm = ChatOpenAI(
         model=MODEL_STRONG,
         api_key=OPENROUTER_API_KEY,
         base_url=OPENROUTER_BASE_URL,
     )
 
-    # 오케스트레이터 에이전트 생성 및 전체 파이프라인 실행
     orchestrator = create_deep_agent(
         model=llm,
         tools=[
