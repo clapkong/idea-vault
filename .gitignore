@@ -1,3 +1,15 @@
+# Custom Files
+notes.txt
+agents_test/
+.claudeignore
+
+# Mac File
+.DS_Store
+._.DS_Store
+**/.DS_Store
+**/._.DS_Store
+
+# ---------------------- GitHub .gitignore Python ----------------------
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -56,7 +68,6 @@ cover/
 *.pot
 
 # Django stuff:
-*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
