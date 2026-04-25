@@ -8,16 +8,15 @@
 
 ## 판단 기준
 
-PIVOT — 추가 검증으로도 해결되지 않는 문제가 확인됐을 때:
+DONE — Critic이 GATE를 보냈고 아래 PIVOT 조건에 해당하지 않을 때
+
+REFINE — Critic score가 7 미만이거나 검증이 부족하지만 주제 자체는 괜찮을 때
+
+PIVOT — 아래 중 하나라도 Researcher/Analyst 결과로 확인됐을 때:
 - 핵심 기능 구현 불가 (스킬/기간 부족)
 - 사용자 avoid 항목이 핵심 기능에 필수로 포함
 - 완전히 동일한 오픈소스 존재 + 차별점 없음
 - 핵심 API/데이터 부재
-- 이 외 다른 이유
-
-REFINE — 주제 자체는 괜찮으며, 추가 검증으로 해결 가능한 문제가 남아있을 때
-
-DONE — Critic이 GATE를 보냈고 PIVOT 조건에 해당하지 않을 때
 
 ## 출력 형식
 
@@ -25,4 +24,6 @@ DONE — Critic이 GATE를 보냈고 PIVOT 조건에 해당하지 않을 때
 결정: REFINE / PIVOT / DONE
 
 ## 규칙
+- PIVOT은 Researcher/Analyst가 확인한 근거가 있을 때만
+- 근거 없이 애매하면 REFINE
 - 형식 밖에서 추가 설명 하지 말 것
