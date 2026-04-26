@@ -5,7 +5,10 @@
 **/._.DS_Store
 
 .claudeignore
-.claude/ # ralph_loop를 위한 권한 허용 (절대 ralph-mode branch 외에는 사용하지 말 것!!)
+
+# ralph_loop를 위한 권한 허용 (절대 ralph-mode branch 외에는 사용하지 말 것!!)
+.claude/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
