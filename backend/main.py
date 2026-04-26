@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -17,6 +18,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+USE_MOCK_MODE = os.getenv("USE_MOCK_MODE", "false").lower() == "true"
 
 MOCK_DIR = Path(__file__).parent / "mock_agents"
 
@@ -44,10 +47,17 @@ class GenerateRequest(BaseModel):
 
 @app.post("/generate")
 async def generate(body: GenerateRequest):
-    return {"job_id": "92b2d589", "status": "processing"}
+    if USE_MOCK_MODE:
+        return {"job_id": "92b2d589", "status": "processing"}
+
+    # TODO (real mode):
+    #   job_id = str(uuid.uuid4())[:8]
+    #   background_tasks.add_task(orchestrator.run, job_id, body.user_input)
+    #   return {"job_id": job_id, "status": "processing"}
+    raise HTTPException(status_code=501, detail="Real mode not implemented")
 
 
-async def event_stream(job_id: str) -> AsyncGenerator[str, None]:
+async def mock_event_stream(job_id: str) -> AsyncGenerator[str, None]:
     data = load_mock(job_id)
     for event in data.get("events", []):
         delay = event.get("delay_sec", 0)
@@ -59,13 +69,27 @@ async def event_stream(job_id: str) -> AsyncGenerator[str, None]:
 
 @app.get("/stream/{job_id}")
 async def stream(job_id: str):
-    return EventSourceResponse(event_stream(job_id))
+    if USE_MOCK_MODE:
+        return EventSourceResponse(mock_event_stream(job_id))
+
+    # TODO (real mode):
+    #   실행 중인 job의 로그 파일을 tail -f 방식으로 읽어 SSE로 스트리밍
+    #   log_path = Path("data/jobs") / job_id / "stream.log"
+    raise HTTPException(status_code=501, detail="Real mode not implemented")
 
 
 @app.get("/result/{job_id}")
 async def result(job_id: str):
-    data = load_mock(job_id)
-    return {"prd": data.get("prd", ""), "loop_history": data.get("loop_history", [])}
+    if USE_MOCK_MODE:
+        data = load_mock(job_id)
+        return {"prd": data.get("prd", ""), "loop_history": data.get("loop_history", [])}
+
+    # TODO (real mode):
+    #   job_dir = Path("data/jobs") / job_id
+    #   prd = (job_dir / "prd.md").read_text()
+    #   loop_history = json.loads((job_dir / "loop_history.json").read_text())
+    #   return {"prd": prd, "loop_history": loop_history}
+    raise HTTPException(status_code=501, detail="Real mode not implemented")
 
 
 @app.get("/history")
