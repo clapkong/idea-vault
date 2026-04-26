@@ -13,17 +13,22 @@ export default function Analyze() {
     if (!idea) return []
     return [{ id: 'user-msg', role: 'user', content: idea }]
   })
-  const [sessionStatus, setSessionStatus] = useState('running') // 'running' | 'done' | 'stopped' | 'error'
+  const [sessionStatus, setSessionStatus] = useState('connecting') // 'connecting' | 'running' | 'done' | 'stopped' | 'error'
   const [prdReady, setPrdReady] = useState(false)
   const chatEndRef = useRef(null)
   const esRef = useRef(null)
   const agentBubblesRef = useRef({})
+  const firstEventRef = useRef(false)
 
   useEffect(() => {
     const es = new EventSource(`/stream/${jobId}`)
     esRef.current = es
 
     es.onmessage = (event) => {
+      if (!firstEventRef.current) {
+        firstEventRef.current = true
+        setSessionStatus('running')
+      }
       try {
         const data = JSON.parse(event.data)
         handleSSE(data)
@@ -33,7 +38,9 @@ export default function Analyze() {
     }
 
     es.onerror = () => {
-      setSessionStatus('error')
+      if (sessionStatus === 'connecting') {
+        setSessionStatus('error')
+      }
       es.close()
     }
 
@@ -64,7 +71,7 @@ export default function Analyze() {
       const id = agentBubblesRef.current[data.agent]
       setMessages(prev => prev.map(m =>
         m.id === id
-          ? { ...m, loading: false, content: data.output || '', tokens: data.tokens, timestamp: m.timestamp }
+          ? { ...m, loading: false, content: data.output || '', tokens: data.tokens }
           : m
       ))
       if (data.agent === 'prd_writer') {
@@ -102,6 +109,9 @@ export default function Analyze() {
     <div className="analyze-page">
       <div className="chat-area">
         <div className="chat-messages">
+          {sessionStatus === 'connecting' && (
+            <div className="connecting-msg">AI 에이전트에 연결 중...</div>
+          )}
           {messages.map(msg => (
             <ChatBubble key={msg.id} message={msg} />
           ))}
@@ -120,7 +130,7 @@ export default function Analyze() {
         )}
       </div>
 
-      {sessionStatus === 'running' && (
+      {(sessionStatus === 'running' || sessionStatus === 'connecting') && (
         <div className="stop-bar">
           <button className="btn-stop" onClick={handleStop}>세션 멈추기</button>
         </div>

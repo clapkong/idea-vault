@@ -5,6 +5,7 @@ import Analyze from './pages/Analyze'
 import History from './pages/History'
 import Result from './pages/Result'
 import Analytics from './pages/Analytics'
+import NotFound from './pages/NotFound'
 import './App.css'
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
           <Route path="/history" element={<History />} />
           <Route path="/result/:jobId" element={<Result />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </BrowserRouter>

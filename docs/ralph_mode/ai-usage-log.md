@@ -74,4 +74,21 @@
 날짜/시간: 2026-04-26
 
 ### 작업 내용
+- btn-primary 공통 스타일을 index.css로 이동 (Home/Analyze/History 전체에 적용)
+- Home.css에서 중복 btn-primary 제거
+- Analyze 페이지: 연결 중 상태(connecting) 추가, fade-pulse 애니메이션
+- NotFound 페이지 추가 (404 fallback)
+- App.jsx: * 와일드카드 라우트 추가
+- package.json name 수정 (ideavault-app → ideavault-frontend)
+- 빌드 최종 확인 (197 모듈, 오류 없음)
 
+### 생성/수정된 파일
+- frontend/src/index.css
+- frontend/src/App.jsx
+- frontend/src/pages/Home.css
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/Analyze.css
+- frontend/src/pages/NotFound.jsx (신규)
+- frontend/package.json
+
+<promise>FRONTEND_COMPLETE</promise>
