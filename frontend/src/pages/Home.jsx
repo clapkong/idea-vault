@@ -25,10 +25,10 @@ export default function Home() {
     setError('')
     setLoading(true)
     try {
-      const res = await fetch('http://localhost:8000/generate', {
+      const res = await fetch('/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idea: text }),
+        body: JSON.stringify({ user_input: text }),
       })
       const data = await res.json()
       navigate(`/analyze/${data.job_id}`, { state: { idea: text } })

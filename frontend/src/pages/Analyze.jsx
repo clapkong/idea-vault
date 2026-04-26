@@ -20,7 +20,7 @@ export default function Analyze() {
   const agentBubblesRef = useRef({})
 
   useEffect(() => {
-    const es = new EventSource(`http://localhost:8000/stream/${jobId}`)
+    const es = new EventSource(`/stream/${jobId}`)
     esRef.current = es
 
     es.onmessage = (event) => {
@@ -83,7 +83,7 @@ export default function Analyze() {
 
   async function handleStop() {
     try {
-      await fetch(`http://localhost:8000/jobs/${jobId}/stop`, { method: 'POST' })
+      await fetch(`/jobs/${jobId}/stop`, { method: 'POST' })
     } catch {
       // ignore
     }

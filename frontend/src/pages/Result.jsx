@@ -20,7 +20,7 @@ export default function Result() {
   const contentRef = useRef(null)
 
   useEffect(() => {
-    fetch(`http://localhost:8000/result/${jobId}`)
+    fetch(`/result/${jobId}`)
       .then(r => r.json())
       .then(data => {
         const md = data.prd || ''

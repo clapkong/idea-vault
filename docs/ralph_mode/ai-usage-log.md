@@ -47,6 +47,26 @@
 날짜/시간: 2026-04-26
 
 ### 작업 내용
+- Vite 프록시 설정 (localhost:8000 하드코딩 제거, 상대경로로 변경)
+- Home.jsx: POST body 필드명 수정 (idea → user_input)
+- Analytics.jsx: 백엔드 응답 형식 대응 ({summary, data} 또는 flat array)
+- History.jsx: events 배열 기반 채팅 재구성 (loop_history 비어있을 때)
+- ChatBubble: analyst 에이전트 추가, 아이콘 fallback 처리
+- backend/main.py: CORS에 5173 포트 추가, 누락 엔드포인트 추가 (stop/favorite/delete)
+- backend/main.py: analytics 날짜 범위 필터링 구현
+- backend/main.py: result 엔드포인트에 events 필드 포함
+- frontend/.gitignore 추가
+
+### 생성/수정된 파일
+- frontend/vite.config.js
+- frontend/.gitignore
+- frontend/src/pages/Home.jsx
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/History.jsx
+- frontend/src/pages/Result.jsx
+- frontend/src/pages/Analytics.jsx
+- frontend/src/components/ChatBubble.jsx
+- backend/main.py
 
 ---
 

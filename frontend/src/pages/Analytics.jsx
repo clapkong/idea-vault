@@ -98,9 +98,13 @@ export default function Analytics() {
   useEffect(() => {
     setLoading(true)
     const param = RANGE_PARAMS[range]
-    fetch(`http://localhost:8000/analytics?range=${param}`)
+    fetch(`/analytics?range=${param}`)
       .then(r => r.json())
-      .then(data => setRows(Array.isArray(data) ? data : []))
+      .then(data => {
+        // backend returns {summary, data} or flat array
+        const rows = Array.isArray(data) ? data : (data.data || [])
+        setRows(rows)
+      })
       .catch(() => setRows([]))
       .finally(() => setLoading(false))
   }, [range])

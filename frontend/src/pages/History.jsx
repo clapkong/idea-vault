@@ -9,6 +9,42 @@ function formatDate(str) {
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+function buildChatFromResult(data, inputPreview) {
+  const msgs = []
+  if (inputPreview) msgs.push({ id: 'user', role: 'user', content: inputPreview })
+
+  // Use loop_history if populated, otherwise reconstruct from events
+  const lh = data.loop_history || []
+  if (lh.length > 0) {
+    lh.forEach((entry, i) => {
+      if (entry.agent && entry.output) {
+        msgs.push({
+          id: `lh-${i}`,
+          role: 'agent',
+          agent: entry.agent,
+          content: entry.output,
+          timestamp: entry.timestamp,
+          tokens: entry.tokens,
+        })
+      }
+    })
+  } else if (data.events) {
+    data.events
+      .filter(e => e.type === 'agent_done' && e.output)
+      .forEach((e, i) => {
+        msgs.push({
+          id: `ev-${i}`,
+          role: 'agent',
+          agent: e.agent,
+          content: e.output,
+          timestamp: e.timestamp,
+          tokens: e.tokens,
+        })
+      })
+  }
+  return msgs
+}
+
 export default function History() {
   const [jobs, setJobs] = useState([])
   const [filtered, setFiltered] = useState([])
@@ -21,7 +57,7 @@ export default function History() {
   const chatEndRef = useRef(null)
 
   useEffect(() => {
-    fetch('http://localhost:8000/history')
+    fetch('/history')
       .then(r => r.json())
       .then(data => {
         setJobs(data)
@@ -49,26 +85,10 @@ export default function History() {
     setSelectedId(jobId)
     setLoadingChat(true)
     setChatMessages([])
-    fetch(`http://localhost:8000/result/${jobId}`)
+    fetch(`/result/${jobId}`)
       .then(r => r.json())
       .then(data => {
-        const msgs = []
-        if (inputPreview) msgs.push({ id: 'user', role: 'user', content: inputPreview })
-        if (data.loop_history) {
-          data.loop_history.forEach((entry, i) => {
-            if (entry.agent && entry.output) {
-              msgs.push({
-                id: `agent-${i}`,
-                role: 'agent',
-                agent: entry.agent,
-                content: entry.output,
-                timestamp: entry.timestamp,
-                tokens: entry.tokens,
-              })
-            }
-          })
-        }
-        setChatMessages(msgs)
+        setChatMessages(buildChatFromResult(data, inputPreview))
       })
       .catch(() => setChatMessages([]))
       .finally(() => setLoadingChat(false))
@@ -76,7 +96,7 @@ export default function History() {
 
   function handleFavorite(e, jobId, current) {
     e.stopPropagation()
-    fetch(`http://localhost:8000/jobs/${jobId}/favorite`, {
+    fetch(`/jobs/${jobId}/favorite`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ favorite: !current }),
@@ -91,7 +111,7 @@ export default function History() {
   function handleDelete(e, jobId) {
     e.stopPropagation()
     if (!window.confirm('정말 이 항목을 삭제하시겠습니까?')) return
-    fetch(`http://localhost:8000/jobs/${jobId}`, { method: 'DELETE' })
+    fetch(`/jobs/${jobId}`, { method: 'DELETE' })
       .then(() => {
         setJobs(prev => {
           const next = prev.filter(j => j.job_id !== jobId)

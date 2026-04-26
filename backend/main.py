@@ -13,7 +13,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,8 +27,11 @@ ANALYTICS_DATA = [
     {"job_id": "92b2d589", "date": "2026-04-26", "title": "내 음악 취향 분석기", "model": "sonnet", "tokens": 23666, "cost": 0.42},
     {"job_id": "abc12345", "date": "2026-04-25", "title": "간단한 번역 도구", "model": "sonnet", "tokens": 11200, "cost": 0.21},
     {"job_id": "def67890", "date": "2026-04-24", "title": "파일 정리 자동화 스크립트", "model": "sonnet", "tokens": 6800, "cost": 0.14},
-    {"job_id": "ghi11111", "date": "2026-04-23", "title": "날씨 알림 봇", "model": "sonnet", "tokens": 3565, "cost": 0.10},
+    {"job_id": "ghi11111", "date": "2026-04-23", "title": "날씨 알림 봇", "model": "haiku", "tokens": 3565, "cost": 0.10},
 ]
+
+# In-memory store for favorite state (mirrors mock data)
+_favorites: dict[str, bool] = {}
 
 
 def load_mock(job_id: str) -> dict:
@@ -49,11 +52,6 @@ class GenerateRequest(BaseModel):
 async def generate(body: GenerateRequest):
     if USE_MOCK_MODE:
         return {"job_id": "92b2d589", "status": "processing"}
-
-    # TODO (real mode):
-    #   job_id = str(uuid.uuid4())[:8]
-    #   background_tasks.add_task(orchestrator.run, job_id, body.user_input)
-    #   return {"job_id": job_id, "status": "processing"}
     raise HTTPException(status_code=501, detail="Real mode not implemented")
 
 
@@ -71,10 +69,6 @@ async def mock_event_stream(job_id: str) -> AsyncGenerator[str, None]:
 async def stream(job_id: str):
     if USE_MOCK_MODE:
         return EventSourceResponse(mock_event_stream(job_id))
-
-    # TODO (real mode):
-    #   실행 중인 job의 로그 파일을 tail -f 방식으로 읽어 SSE로 스트리밍
-    #   log_path = Path("data/jobs") / job_id / "stream.log"
     raise HTTPException(status_code=501, detail="Real mode not implemented")
 
 
@@ -82,13 +76,11 @@ async def stream(job_id: str):
 async def result(job_id: str):
     if USE_MOCK_MODE:
         data = load_mock(job_id)
-        return {"prd": data.get("prd", ""), "loop_history": data.get("loop_history", [])}
-
-    # TODO (real mode):
-    #   job_dir = Path("data/jobs") / job_id
-    #   prd = (job_dir / "prd.md").read_text()
-    #   loop_history = json.loads((job_dir / "loop_history.json").read_text())
-    #   return {"prd": prd, "loop_history": loop_history}
+        return {
+            "prd": data.get("prd", ""),
+            "loop_history": data.get("loop_history", []),
+            "events": data.get("events", []),
+        }
     raise HTTPException(status_code=501, detail="Real mode not implemented")
 
 
@@ -97,18 +89,55 @@ async def history():
     path = MOCK_DIR / "history.json"
     if not path.exists():
         raise HTTPException(status_code=404, detail="History not found")
-    return json.loads(path.read_text(encoding="utf-8"))
+    items = json.loads(path.read_text(encoding="utf-8"))
+    for item in items:
+        job_id = item.get("job_id")
+        if job_id in _favorites:
+            item["favorite"] = _favorites[job_id]
+    return items
 
 
 @app.get("/analytics")
 async def analytics(range: str = "all"):
-    total_tokens = sum(d["tokens"] for d in ANALYTICS_DATA)
-    total_cost = round(sum(d["cost"] for d in ANALYTICS_DATA), 2)
+    from datetime import date, timedelta
+    today = date.today()
+    if range == "today":
+        cutoff = today
+    elif range == "7days":
+        cutoff = today - timedelta(days=7)
+    elif range == "30days":
+        cutoff = today - timedelta(days=30)
+    else:
+        cutoff = None
+
+    data = ANALYTICS_DATA
+    if cutoff:
+        data = [d for d in data if d["date"] >= str(cutoff)]
+
+    total_tokens = sum(d["tokens"] for d in data)
+    total_cost = round(sum(d["cost"] for d in data), 2)
     return {
         "summary": {
-            "total_jobs": len(ANALYTICS_DATA),
+            "total_jobs": len(data),
             "total_tokens": total_tokens,
             "total_cost": total_cost,
         },
-        "data": ANALYTICS_DATA,
+        "data": data,
     }
+
+
+@app.patch("/jobs/{job_id}/favorite")
+async def toggle_favorite(job_id: str, body: dict):
+    favorite = body.get("favorite", False)
+    _favorites[job_id] = favorite
+    return {"favorite": favorite}
+
+
+@app.post("/jobs/{job_id}/stop")
+async def stop_job(job_id: str):
+    return {"stopped": True}
+
+
+@app.delete("/jobs/{job_id}")
+async def delete_job(job_id: str):
+    return {"deleted": True}

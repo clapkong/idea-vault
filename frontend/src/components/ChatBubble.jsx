@@ -3,11 +3,16 @@ import './ChatBubble.css'
 const AGENT_LABELS = {
   planner: 'Planner',
   researcher: 'Researcher',
+  analyst: 'Analyst',
   critic: 'Critic',
   writer: 'Writer',
   gate: 'Gate',
   prd_writer: 'PRD Writer',
   user: 'User',
+}
+
+const AGENT_ICON_MAP = {
+  analyst: 'critic', // fallback to critic icon if analyst.png not available
 }
 
 function LoadingDots() {
@@ -44,7 +49,8 @@ export default function ChatBubble({ message }) {
   const { role, agent, content, timestamp, tokens, loading, progressMessage } = message
   const isUser = role === 'user'
   const label = isUser ? 'User' : (AGENT_LABELS[agent] || agent)
-  const iconSrc = isUser ? '/agents/user.png' : `/agents/${agent}.png`
+  const iconAgent = AGENT_ICON_MAP[agent] || agent
+  const iconSrc = isUser ? '/agents/user.png' : `/agents/${iconAgent}.png`
 
   return (
     <div className={`chat-bubble-row ${isUser ? 'user-row' : 'agent-row'}`}>
