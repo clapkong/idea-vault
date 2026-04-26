@@ -29,4 +29,4 @@ MAX_INNER_LOOPS: int = int(os.getenv("MAX_INNER_LOOPS", "3"))
 BASE_DIR: Path = Path(__file__).parent                  # backend/
 PROJECT_ROOT: Path = BASE_DIR.parent                    # ideavault/
 PROMPTS_DIR: Path = BASE_DIR / "agents" / "prompts"    # backend/agents/prompts/
-LOGS_DIR: Path = PROJECT_ROOT / "logs"                  # ideavault/logs/
+LOGS_DIR: Path = PROJECT_ROOT / "docs" / "agent_logs"                  # ideavault/docs/logs/
