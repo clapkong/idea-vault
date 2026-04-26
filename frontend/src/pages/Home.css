@@ -1,0 +1,138 @@
+.home-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.home-center {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.home-catchphrase {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: -0.3px;
+}
+
+.home-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.home-textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  padding: 20px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  background: transparent;
+  min-height: 160px;
+}
+
+.home-textarea::placeholder {
+  color: #bbb0a0;
+}
+
+.home-input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+}
+
+.char-counter {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.char-counter.warn {
+  color: #c0392b;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--secondary);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-msg {
+  font-size: 13px;
+  color: #c0392b;
+  padding: 0 20px 12px;
+  background: var(--background);
+}
+
+.example-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chips-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chips-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 13px;
+  color: var(--text);
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  background: var(--background);
+  border-color: var(--secondary);
+  color: var(--primary);
+}

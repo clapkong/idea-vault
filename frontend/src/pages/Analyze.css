@@ -1,0 +1,64 @@
+.analyze-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px);
+}
+
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 48px;
+  display: flex;
+  flex-direction: column;
+}
+
+.prd-ready-banner {
+  padding: 12px 48px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+}
+
+.session-status-msg {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 12px;
+  background: var(--background);
+  border-radius: 8px;
+  margin: 8px auto;
+  border: 1px solid var(--border);
+}
+
+.stop-bar {
+  padding: 12px 48px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+}
+
+.btn-stop {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 13px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-stop:hover {
+  border-color: #c0392b;
+  color: #c0392b;
+}

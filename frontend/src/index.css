@@ -1,0 +1,56 @@
+:root {
+  --primary: #8B6F47;
+  --secondary: #A68A64;
+  --background: #F5F1E8;
+  --card: #FDFBF7;
+  --border: #DED4C0;
+  --text: #3D2E1F;
+  --text-muted: #8a7a6a;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  font-family: var(--sans);
+  font-size: 16px;
+  color: var(--text);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text);
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--sans);
+}
+
+input, textarea, select {
+  font-family: var(--sans);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
