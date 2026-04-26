@@ -1,3 +1,11 @@
+# Mac File
+.DS_Store
+._.DS_Store
+**/.DS_Store
+**/._.DS_Store
+
+.claudeignore
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
