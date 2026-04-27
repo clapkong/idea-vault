@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+from collections import defaultdict
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -13,22 +14,18 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-USE_MOCK_MODE = os.getenv("USE_MOCK_MODE", "false").lower() == "true"
+USE_MOCK_MODE = os.getenv("USE_MOCK_MODE", "true").lower() == "true"
 
 MOCK_DIR = Path(__file__).parent / "mock_agents"
 
-ANALYTICS_DATA = [
-    {"job_id": "92b2d589", "date": "2026-04-26", "title": "내 음악 취향 분석기", "model": "sonnet", "tokens": 23666, "cost": 0.42},
-    {"job_id": "abc12345", "date": "2026-04-25", "title": "간단한 번역 도구", "model": "sonnet", "tokens": 11200, "cost": 0.21},
-    {"job_id": "def67890", "date": "2026-04-24", "title": "파일 정리 자동화 스크립트", "model": "sonnet", "tokens": 6800, "cost": 0.14},
-    {"job_id": "ghi11111", "date": "2026-04-23", "title": "날씨 알림 봇", "model": "sonnet", "tokens": 3565, "cost": 0.10},
-]
+# TODO(backend): /generate should create a real job_id (UUID) and return it.
+#   Currently hardcoded to "92b2d589" for mock mode.
 
 
 def load_mock(job_id: str) -> dict:
@@ -41,6 +38,18 @@ def load_mock(job_id: str) -> dict:
         raise HTTPException(status_code=500, detail="Failed to parse mock data")
 
 
+def load_history() -> list[dict]:
+    path = MOCK_DIR / "history.json"
+    if not path.exists():
+        return []
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def save_history(items: list[dict]) -> None:
+    path = MOCK_DIR / "history.json"
+    path.write_text(json.dumps(items, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 class GenerateRequest(BaseModel):
     user_input: str
 
@@ -48,12 +57,9 @@ class GenerateRequest(BaseModel):
 @app.post("/generate")
 async def generate(body: GenerateRequest):
     if USE_MOCK_MODE:
+        # TODO(backend): replace with real job creation logic.
+        #   Should generate a unique job_id, persist the job, and kick off the agent pipeline.
         return {"job_id": "92b2d589", "status": "processing"}
-
-    # TODO (real mode):
-    #   job_id = str(uuid.uuid4())[:8]
-    #   background_tasks.add_task(orchestrator.run, job_id, body.user_input)
-    #   return {"job_id": job_id, "status": "processing"}
     raise HTTPException(status_code=501, detail="Real mode not implemented")
 
 
@@ -71,10 +77,6 @@ async def mock_event_stream(job_id: str) -> AsyncGenerator[str, None]:
 async def stream(job_id: str):
     if USE_MOCK_MODE:
         return EventSourceResponse(mock_event_stream(job_id))
-
-    # TODO (real mode):
-    #   실행 중인 job의 로그 파일을 tail -f 방식으로 읽어 SSE로 스트리밍
-    #   log_path = Path("data/jobs") / job_id / "stream.log"
     raise HTTPException(status_code=501, detail="Real mode not implemented")
 
 
@@ -82,33 +84,125 @@ async def stream(job_id: str):
 async def result(job_id: str):
     if USE_MOCK_MODE:
         data = load_mock(job_id)
-        return {"prd": data.get("prd", ""), "loop_history": data.get("loop_history", [])}
-
-    # TODO (real mode):
-    #   job_dir = Path("data/jobs") / job_id
-    #   prd = (job_dir / "prd.md").read_text()
-    #   loop_history = json.loads((job_dir / "loop_history.json").read_text())
-    #   return {"prd": prd, "loop_history": loop_history}
+        return {
+            "prd": data.get("prd", ""),
+            "loop_history": data.get("loop_history", []),
+            "events": data.get("events", []),
+        }
     raise HTTPException(status_code=501, detail="Real mode not implemented")
 
 
 @app.get("/history")
 async def history():
-    path = MOCK_DIR / "history.json"
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="History not found")
-    return json.loads(path.read_text(encoding="utf-8"))
+    # TODO(backend): replace with DB query.
+    #   Filter: WHERE deleted = false, ORDER BY created_at DESC.
+    #   Support query params: ?search=, ?sort=newest|oldest, ?favorite=true
+    items = load_history()
+    return [item for item in items if not item.get("deleted", False)]
 
 
 @app.get("/analytics")
 async def analytics(range: str = "all"):
-    total_tokens = sum(d["tokens"] for d in ANALYTICS_DATA)
-    total_cost = round(sum(d["cost"] for d in ANALYTICS_DATA), 2)
+    # TODO(backend): replace with pandas + CSV pipeline.
+    #   Read from analytics CSV (one row per agent_done event), aggregate with groupby,
+    #   support ?range= filtering, return {summary, data} shape.
+    #   CSV columns: job_id, date, title, agent, model, tokens
+    from datetime import date, timedelta
+    today = date.today()
+    if range == "today":
+        cutoff = str(today)
+    elif range == "7days":
+        cutoff = str(today - timedelta(days=7))
+    elif range == "30days":
+        cutoff = str(today - timedelta(days=30))
+    else:
+        cutoff = None
+
+    history_items = load_history()
+    rows = []
+
+    for item in history_items:
+        if item.get("deleted", False):
+            continue
+
+        job_id = item["job_id"]
+        date_str = item.get("created_at", "")[:10]
+        title = item.get("title", "")
+
+        if cutoff and date_str < cutoff:
+            continue
+
+        job_path = MOCK_DIR / f"{job_id}.json"
+        if not job_path.exists():
+            continue
+
+        job_data = json.loads(job_path.read_text(encoding="utf-8"))
+        events = job_data.get("events", [])
+
+        # Aggregate tokens per model within this session
+        model_tokens: dict[str, int] = defaultdict(int)
+        for event in events:
+            if event.get("type") == "agent_done":
+                # TODO(backend): each event should carry a `model` field from the real pipeline.
+                #   Fall back to "claude-sonnet" for older sessions that predate this field.
+                model = event.get("model", "claude-sonnet")
+                model_tokens[model] += event.get("tokens", 0)
+
+        if not model_tokens:
+            model_tokens["claude-sonnet"] = 0
+
+        for model, tokens in model_tokens.items():
+            rows.append({
+                "job_id": job_id,
+                "date": date_str,
+                "title": title,
+                "model": model,
+                "tokens": tokens,
+            })
+
+    unique_jobs = len({r["job_id"] for r in rows})
+    total_tokens = sum(r["tokens"] for r in rows)
     return {
         "summary": {
-            "total_jobs": len(ANALYTICS_DATA),
+            "total_jobs": unique_jobs,
             "total_tokens": total_tokens,
-            "total_cost": total_cost,
         },
-        "data": ANALYTICS_DATA,
+        "data": rows,
     }
+
+
+@app.patch("/jobs/{job_id}/favorite")
+async def toggle_favorite(job_id: str, body: dict):
+    # TODO(backend): replace with DB UPDATE jobs SET favorite=? WHERE job_id=?
+    favorite = body.get("favorite", False)
+    items = load_history()
+    found = False
+    for item in items:
+        if item["job_id"] == job_id:
+            item["favorite"] = favorite
+            found = True
+    if not found:
+        raise HTTPException(status_code=404, detail="Job not found")
+    save_history(items)
+    return {"favorite": favorite}
+
+
+@app.post("/jobs/{job_id}/stop")
+async def stop_job(job_id: str):
+    return {"stopped": True}
+
+
+@app.delete("/jobs/{job_id}")
+async def delete_job(job_id: str):
+    # TODO(backend): replace with DB UPDATE jobs SET deleted=true WHERE job_id=?
+    #   Soft delete — never physically remove the record so analytics data stays intact.
+    items = load_history()
+    found = False
+    for item in items:
+        if item["job_id"] == job_id:
+            item["deleted"] = True
+            found = True
+    if not found:
+        raise HTTPException(status_code=404, detail="Job not found")
+    save_history(items)
+    return {"deleted": True}

@@ -1,0 +1,423 @@
+# IdeaVault Frontend - Ralph Mode Log
+
+시작: 2026-04-26 21:14:02
+
+---
+
+## Loop 1 (Ralph Mode 재실행)
+날짜/시간: 2026-04-26
+
+### 작업 내용
+- Vite + React 프로젝트 초기화 (기존 public/agents 이미지 유지)
+- react-router-dom, react-markdown 패키지 설치
+- 전역 CSS 변수 설정 (테마 컬러: 로스팅 브라운, 크래프트지 등)
+- NavBar 컴포넌트 (네비게이션 바, 활성 링크 강조)
+- ChatBubble 컴포넌트 (agent/user 말풍선, 로딩 애니메이션 ●●●○○○)
+- Home 페이지 (아이디어 입력 textarea, 예시 chip 3개, 추천 받기 버튼)
+- Analyze 페이지 (SSE 스트리밍, agent 말풍선, 세션 멈추기)
+- History 페이지 (좌우 분할, 히스토리 카드, 즐겨찾기/삭제, 채팅 재현)
+- Result 페이지 (목차 사이드바, react-markdown 렌더링, PRD 다운로드)
+- Analytics 페이지 (날짜 범위 필터, 요약 카드, 테이블, 파이/바 차트, CSV)
+- 빌드 성공 확인
+
+### 생성/수정된 파일
+- frontend/index.html
+- frontend/src/index.css
+- frontend/src/App.css
+- frontend/src/App.jsx
+- frontend/src/main.jsx
+- frontend/src/components/NavBar.jsx
+- frontend/src/components/NavBar.css
+- frontend/src/components/ChatBubble.jsx
+- frontend/src/components/ChatBubble.css
+- frontend/src/pages/Home.jsx
+- frontend/src/pages/Home.css
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/Analyze.css
+- frontend/src/pages/History.jsx
+- frontend/src/pages/History.css
+- frontend/src/pages/Result.jsx
+- frontend/src/pages/Result.css
+- frontend/src/pages/Analytics.jsx
+- frontend/src/pages/Analytics.css
+
+---
+
+## Loop 2
+날짜/시간: 2026-04-26
+
+### 작업 내용
+- Vite 프록시 설정 (localhost:8000 하드코딩 제거, 상대경로로 변경)
+- Home.jsx: POST body 필드명 수정 (idea → user_input)
+- Analytics.jsx: 백엔드 응답 형식 대응 ({summary, data} 또는 flat array)
+- History.jsx: events 배열 기반 채팅 재구성 (loop_history 비어있을 때)
+- ChatBubble: analyst 에이전트 추가, 아이콘 fallback 처리
+- backend/main.py: CORS에 5173 포트 추가, 누락 엔드포인트 추가 (stop/favorite/delete)
+- backend/main.py: analytics 날짜 범위 필터링 구현
+- backend/main.py: result 엔드포인트에 events 필드 포함
+- frontend/.gitignore 추가
+
+### 생성/수정된 파일
+- frontend/vite.config.js
+- frontend/.gitignore
+- frontend/src/pages/Home.jsx
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/History.jsx
+- frontend/src/pages/Result.jsx
+- frontend/src/pages/Analytics.jsx
+- frontend/src/components/ChatBubble.jsx
+- backend/main.py
+
+---
+
+## Loop 3
+날짜/시간: 2026-04-26
+
+### 작업 내용
+- btn-primary 공통 스타일을 index.css로 이동 (Home/Analyze/History 전체에 적용)
+- Home.css에서 중복 btn-primary 제거
+- Analyze 페이지: 연결 중 상태(connecting) 추가, fade-pulse 애니메이션
+- NotFound 페이지 추가 (404 fallback)
+- App.jsx: * 와일드카드 라우트 추가
+- package.json name 수정 (ideavault-app → ideavault-frontend)
+- 빌드 최종 확인 (197 모듈, 오류 없음)
+
+### 생성/수정된 파일
+- frontend/src/index.css
+- frontend/src/App.jsx
+- frontend/src/pages/Home.css
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/Analyze.css
+- frontend/src/pages/NotFound.jsx (신규)
+- frontend/package.json
+
+<promise>FRONTEND_COMPLETE</promise>
+
+---
+
+## Loop 4
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- Analyze: ctrl+s 등 키보드 단축키로 세션 종료되는 현상 방지 (keydown 이벤트 차단)
+- ChatBubble: Researcher tokens=0 미표시 버그 수정 (`typeof tokens === 'number'` 조건)
+- ChatBubble: 버블 내 텍스트 클리핑 방지 (overflow-wrap: break-word)
+- ChatBubble: 버블 가로 길이 70% → 88%
+- ChatBubble: 에이전트 버블에 ReactMarkdown + remark-gfm 렌더링 적용
+- PRD Viewer: remark-gfm 설치 및 적용으로 테이블 깨짐 수정
+- PRD Viewer: TOC가 콘텐츠와 함께 스크롤되는 오류 수정 (position: sticky)
+- PRD Viewer: 다운로드 버튼 헤더로 이동 — footer 제거, 헤더 우측에 'PRD 다운로드' 버튼 배치
+- History: ❤️/🤍 이모티콘 → SVG 하트 아이콘으로 교체
+- History: 즐겨찾기만 보기 필터 버튼 구현 (favOnly 상태)
+- Home: 예시 Chip을 전체 텍스트에서 이모티콘+키워드 형태로 개선
+
+### 생성/수정된 파일
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/Home.jsx
+- frontend/src/pages/History.jsx
+- frontend/src/pages/History.css
+- frontend/src/pages/Result.jsx
+- frontend/src/pages/Result.css
+- frontend/src/components/ChatBubble.jsx
+- frontend/src/components/ChatBubble.css
+- frontend/package.json (remark-gfm 추가)
+
+### TODO
+- [ ] Token Analytics: 세션 내 복수 모델/에이전트별 통계 — 백엔드 구조 개편 필요
+  - 각 mock JSON events에 `model` 필드 추가
+  - /analytics 엔드포인트가 agent×model×tokens 단위로 집계
+  - Researcher agent는 tokens=0, model="n/a" 처리
+
+---
+
+## Loop 5
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- PRD Viewer: TOC 스크롤 고정 재수정 — sticky 방식 제거, flex `min-height: 0` 방식으로 교체 + App.jsx main에 `minHeight: 0, overflow: hidden` 추가
+- History: 좌측 사이드바 고정, 우측 채팅만 스크롤 — 동일한 min-height: 0 방식 적용
+- PRD Viewer: 테이블 헤더 배경색 구분 — `var(--background)` → `var(--border)`
+- PRD Viewer: 다운로드 버튼 헤더로 이동 — footer 제거, 헤더 우측에 'PRD 다운로드' 버튼 배치
+- ChatBubble: 버블 내 MD 헤더(h1/h2/h3) — 글자 크기 유지, bold만 적용 (font-size: inherit)
+- ChatBubble: PRD Writer 버블 → 'IdeaVault가 만들어준 나만의 PRD 보기!' 버튼으로 교체 (jobId prop 추가)
+- Analyze/History: jobId를 ChatBubble에 전달
+- Vite proxy: /analytics, /history, /result 직접 접근 시 JSON 반환되는 문제 수정 — bypass 함수로 text/html 요청은 프록시 우회
+
+### 생성/수정된 파일
+- frontend/src/App.jsx
+- frontend/src/pages/Result.jsx
+- frontend/src/pages/Result.css
+- frontend/src/pages/History.jsx
+- frontend/src/pages/History.css
+- frontend/src/pages/Analyze.jsx
+- frontend/src/components/ChatBubble.jsx
+- frontend/src/components/ChatBubble.css
+- frontend/vite.config.js
+
+### TODO
+- (없음 — 이전 TODO인 Token Analytics 백엔드 구조 개편은 계속 유효)
+
+---
+
+## Loop 6
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- PRD Viewer: TOC 패널 `overflow: hidden`으로 고정 (스크롤 완전 비활성화)
+- PRD Viewer: result-content에 `overscroll-behavior: contain` 추가
+- History: job-list / chat-messages-history 양쪽에 `overscroll-behavior: contain` → 목록/대화 스크롤 독립화
+- ChatBubble: `bubble-wrapper` max-width `88%` → `65%` (버블 가로 길이 축소)
+- ChatBubble: `AGENT_MESSAGES` 상수 추가 — 에이전트별 progress/done 메시지
+  - loading 시 백엔드 메시지 없으면 상수 fallback
+  - done 시 완료 메시지를 출력 상단에 표시 (`.done-msg`)
+- ChatBubble: `AGENT_COLORS` 상수 추가 — 에이전트별 레이블 색상 (palette 기반)
+- ChatBubble: critic done 메시지 `"..."` → `"추가 정보 확인을 완료했습니다!"`
+- ChatBubble: prd_writer done 버블 — "PRD 작성이 완료되었습니다!" + 버튼
+- Analyze: `prdReady` 배너/상태 제거 — ChatBubble 버튼과 중복 표시 버그 수정
+
+### 생성/수정된 파일
+- frontend/src/pages/Result.css
+- frontend/src/pages/History.css
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/Analyze.css
+- frontend/src/components/ChatBubble.jsx
+- frontend/src/components/ChatBubble.css
+- docs/claude_code/ai-usage-log.md
+
+### TODO
+- (없음)
+
+---
+
+## Loop 7
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- index.css: `html/body height: 100% + overflow: hidden` 추가 → 페이지 레벨 스크롤 완전 차단 (PRD Viewer TOC 고정, History 스크롤 분리 근본 원인 수정)
+- History.jsx: `buildChatFromResult`에서 prd_writer 마지막 항목만 유지 → "IdeaVault가 만들어준 나만의 PRD 보기!" 중복 표시 버그 수정
+- Analyze.jsx: `done` 이벤트 시 `setTimeout navigate` 제거 → PRD 완성 후 자동이동 제거, 버튼 클릭으로만 이동
+- Analyze.jsx: `useNavigate` import 및 선언 제거, 상태 메시지 수정 ("결과 페이지로 이동합니다..." 제거)
+- Analyze.css: `chat-messages` padding `48px → 10%` → 채팅 영역 좌우 10% 여백, 80% 폭 제한
+- ChatBubble.css: `bubble-wrapper` max-width `65% → 80%`
+- ChatBubble.css: `.user-row` `flex-direction: row-reverse` → `justify-content: flex-end` → user 아바타 우측 고정
+
+### 생성/수정된 파일
+- frontend/src/index.css
+- frontend/src/components/ChatBubble.css
+- frontend/src/pages/Analyze.css
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/History.jsx
+
+### TODO
+- (없음)
+
+---
+
+## Loop 8
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- ChatBubble: bubble-wrapper max-width `80% → 65%` (가독성 개선)
+- Analyze.jsx: prd_writer 중복 버블 제거 (`lastPrdIdx` 필터, History와 동일 방식 적용)
+- Analytics: 날짜별 차트를 가로 막대(`BarChart`) → 세로 막대(`ColumnChart`)로 교체 (x축: MM-DD, y축: 토큰)
+- 에이전트 프로필 이미지 교체: `public/agents/`를 `dist/agents/`로 동기화
+  - 신규: `analyst.png`, `basic.png` / 삭제: `writer.png` / 나머지 전체 업데이트
+  - 원인: Vite dev server는 `public/` 서빙, 이미지를 `dist/`에만 교체해 반영 안 됐던 문제
+- `agent_profile_color.py` → `tools/agent_profile_color.py` 이동 (프로젝트 유틸 스크립트 정리)
+
+### 생성/수정된 파일
+- `frontend/src/components/ChatBubble.css`
+- `frontend/src/pages/Analytics.css`
+- `frontend/src/pages/Analytics.jsx`
+- `frontend/src/pages/Analyze.jsx`
+- `frontend/src/pages/agents/` (전체 교체)
+- `tools/agent_profile_color.py` (신규, 루트에서 이동)
+
+### TODO
+- `backend/mock_agents/prd_*.md` 4개 파일이 완전히 동일 — 나중에 job별 다른 내용으로 교체 필요
+
+---
+
+## Loop 9
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- Analytics: 날짜별 차트 → SVG 기반 `ColumnChart`로 전면 교체
+  - y축 눈금(nice-max 알고리즘), x축 MM-DD 날짜 레이블, 좌측 y축 라인
+  - hover 시 툴팁(값 표시) 구현 (onMouseEnter/Leave 상태)
+- Analytics: 모델별 차트 파이 레이아웃 개선
+  - `pie-wrap` flex-direction row, 파이 좌측 / 범례 우측
+  - `pie-svg` 고정 크기 220×220px, `justify-content: center`로 중앙 정렬
+- Analytics: 차트 탭 전환 시 `key={chartMode}`로 React 리마운트 → 애니메이션 재트리거
+- Analytics: 막대 차트 per-element rise 애니메이션
+  - `@keyframes bar-rise` (scaleY 0→1), 각 rect에 stagger delay (`i * 0.04s`) 적용
+  - SVG `transformBox: fill-box`, `transformOrigin: bottom`으로 하단 기준 상승
+- Analytics: 파이 차트 spread 애니메이션 (sweep 방식)
+  - `@property --pie-angle` 등록 → conic-gradient 마스크 보간 가능
+  - `@keyframes pie-in` (0deg→360deg), `.pie-slices` 클래스에 mask-image 적용
+  - SVG에 `<circle>` 배경 추가 → 원 윤곽 고정, 슬라이스만 12시 방향에서 시계방향 sweep
+- PRD Viewer: `result-content` 좌우 여백 `padding: 32px 14%`로 증가
+
+### 생성/수정된 파일
+- `frontend/src/pages/Analytics.jsx`
+- `frontend/src/pages/Analytics.css`
+- `frontend/src/pages/Result.css`
+
+### TODO
+- `backend/mock_agents/prd_*.md` 4개 파일이 완전히 동일 — 나중에 job별 다른 내용으로 교체 필요
+
+---
+
+## Loop 10
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- `92b2d589.json`: 각 `agent_done` 이벤트에 `model` 필드 추가
+  - `planner`, `analyst`, `critic`, `prd_writer` → `claude-sonnet`
+  - `researcher`, `gate` → `claude-haiku`
+- `history.json`: 모든 항목에 `"deleted": false` 필드 추가 (soft delete 지원)
+- `backend/main.py` 전면 개편
+  - 하드코딩 `ANALYTICS_DATA` 제거 → job JSON 이벤트에서 동적 집계 (model별 토큰 합산)
+  - `DELETE /jobs/{id}`: `deleted: true`를 history.json에 기록 (soft delete, 새로고침 후에도 유지)
+  - `PATCH /jobs/{id}/favorite`: 인메모리 `_favorites` 제거, history.json에 영구 저장
+  - `GET /history`: `deleted: true` 항목 필터링
+  - `load_history()` / `save_history()` 헬퍼 추출
+  - TODO 주석 추가: `/generate` job_id 하드코딩, pandas CSV pipeline, DB 쿼리 전환 지점
+- `Analytics.jsx`
+  - 비용 관련 전부 제거 (summary "총 비용" 카드, 테이블 `비용` 컬럼, CSV 헤더)
+  - "총 요청" → "총 세션" (unique `job_id` 기준 집계)
+  - CSV: `job_id` 컬럼 추가 (pandas join 대비), UTF-8 BOM 적용
+- `Analytics.css`
+  - 테이블/차트 flex 비율 6:4 → 5:4 (컬럼 줄어든 만큼 테이블 축소)
+  - 테이블 셀 padding `10px 14px` → `11px 18px`
+  - summary 카드 padding/min-width 확장 (2개 카드 기준으로 여백 재조정)
+
+### 생성/수정된 파일
+- `backend/main.py`
+- `backend/mock_agents/92b2d589.json`
+- `backend/mock_agents/history.json`
+- `frontend/src/pages/Analytics.jsx`
+- `frontend/src/pages/Analytics.css`
+
+### TODO
+- `History.jsx` 검색/정렬/즐겨찾기 필터 아직 프론트에서 처리 → 백엔드 쿼리 파라미터(`?search=`, `?sort=`, `?favorite=`)로 이전 필요
+- `/generate` job_id 하드코딩 (`"92b2d589"`) — 실제 구현 시 UUID 생성 + DB 저장으로 교체
+- Analytics pandas + CSV pipeline 전환 예정 (TODO 주석으로 지점 표시됨)
+- `backend/mock_agents/prd_*.md` 4개 파일이 완전히 동일 — 나중에 job별 다른 내용으로 교체 필요
+
+---
+
+## Loop 11
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- Analytics: 날짜별 `ColumnChart` → 모델별 색상 스택 막대 차트로 개편
+  - `dateChartData` 구조 변경: 날짜별 모델 분리 집계 (`{ label, total, segments: [{model, value}] }`)
+  - 각 날짜 막대를 모델별 세그먼트로 쌓아 올림, `getModelColor`로 색상 구분
+  - hover 툴팁: 모델별 색 네모 + 토큰 수 + 합계 멀티라인 표시
+- Analytics: 파이차트 hover 툴팁 추가
+  - 마우스 위치 따라오는 절대 위치 div 툴팁
+  - 모델 색 네모 + 모델명 + 토큰 수 표시
+- Analytics: 전체 페이지 레이아웃 2컬럼으로 재구성
+  - 기존: header(전체폭) + body(테이블|차트) 구조
+  - 변경: title(전체폭) + analytics-main(analytics-left | analytics-right)
+  - `analytics-left`: range-btns + summary-cards + table (flex: 4)
+  - `analytics-right`: chart-mode-chips + chart-section (flex: 4, align-self: flex-start)
+  - range-btns와 chart-mode-chips가 동일 수직 위치에서 시작
+  - `padding-top`으로 오른쪽 열 수직 위치 미세 조정
+- Analytics: y축 숫자 k 약자 제거 → `toLocaleString()` 그대로 표시
+- Analytics: `chart-section` padding 축소 (`20px` → `14px 16px`)
+
+### 생성/수정된 파일
+- `frontend/src/pages/Analytics.jsx`
+- `frontend/src/pages/Analytics.css`
+
+### TODO
+- (이전 TODO 동일하게 유효)
+
+---
+
+## CSS 주석 + 구조 정리
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- `App.css` / `index.css` 역할 분리
+  - 기존: `.btn-primary` 공통 버튼 스타일이 `index.css`에 있었음
+  - 변경: `index.css`는 CSS 변수 + html/body/root 리셋만, `.btn-primary`는 `App.css`로 이동
+- 전체 CSS 파일에 이해하기 쉬운 주석 추가
+  - 파일 상단: 파일 역할 한 줄 설명
+  - 셀렉터마다: 어떤 스타일 담당인지 한 줄
+  - 비직관적인 CSS 속성(flex 축약값, var(), overflow, position 등)은 파일 내 첫 등장 시에만 인라인 설명
+
+### 생성/수정된 파일
+- `frontend/src/App.css`
+- `frontend/src/index.css`
+- `frontend/src/main.jsx`
+- `frontend/src/App.jsx`
+- `frontend/src/pages/Analyze.css`
+- `frontend/src/pages/Analytics.css`
+- `frontend/src/pages/History.css`
+- `frontend/src/pages/Home.css`
+- `frontend/src/pages/Result.css`
+- `frontend/src/components/NavBar.css`
+- `frontend/src/components/ChatBubble.css`
+
+### TODO
+- JSX 파일 주석 미완료 (CSS만 완료) → 다음 세션에서 완료
+
+### 가상 프롬프트
+`index.css`는 CSS 변수 + html/body/root 리셋만 담당하도록 하고, `.btn-primary` 공통 버튼 스타일은 `App.css`로 옮겨줘.
+
+그리고 모든 CSS 파일에 주석을 달아줘. 규칙은 아래와 같아.
+- 파일 상단에 이 파일이 뭔지 한 줄
+- 셀렉터마다 어떤 스타일 담당인지 한 줄
+- 비직관적인 CSS 속성(flex 축약값, `var()`, `overflow`, `position`, `transition`, `letter-spacing`, `text-transform`, `border-radius`, `border-collapse` 등)은 파일 내 첫 등장 시에만 인라인으로 짧게 설명, 이후엔 반복하지 마
+- 주석은 간결하게, `/* 내용이 넘치면 세로 스크롤 표시 */` 정도 수준으로
+
+---
+
+## JSX 파일 주석 추가
+날짜/시간: 2026-04-27
+
+### 작업 내용
+전체 JSX 파일에 아래 7가지 주석 규칙 일괄 적용.
+
+1. 파일 상단 — 컴포넌트 역할 한 줄
+2. 상수/설정 객체 — 각각 한 줄
+3. 함수/컴포넌트 선언 전 — 한 줄
+4. 훅(useState, useRef, useEffect, useMemo) — 각각 한 줄
+5. JSX 내 주요 블록(조건부·리스트 렌더링) — 한 줄
+6. 비직관적 React 패턴 — 파일 내 첫 등장만 설명, 이후 동일 파일·다른 파일 재등장 모두 생략
+7. 파일 내 일관성 유지
+
+**말투**: "~한다" 서술형 금지. 명사구/라벨 스타일로 간결하게.  
+**설명 깊이**: 첫 등장 패턴은 핵심 한 구절만, 두 절 이상으로 늘리지 않음.
+
+### 생성/수정된 파일
+- `frontend/src/App.jsx`
+- `frontend/src/main.jsx`
+- `frontend/src/pages/Analytics.jsx`
+- `frontend/src/pages/Analyze.jsx`
+- `frontend/src/pages/History.jsx`
+- `frontend/src/pages/Home.jsx`
+- `frontend/src/pages/NotFound.jsx`
+- `frontend/src/pages/Result.jsx`
+- `frontend/src/components/ChatBubble.jsx`
+- `frontend/src/components/NavBar.jsx`
+
+### TODO
+- (없음)
+
+### 가상 프롬프트
+JSX 파일에 주석을 달아줘. 규칙은 아래와 같아.
+
+1. 파일 상단 — 이 컴포넌트가 무엇을 하는지 한 줄 주석
+2. 상수/설정 객체 (예: AGENT_COLORS, EXAMPLE_PROMPTS) — 각각 한 줄 주석으로 뭔지 설명
+3. 함수/컴포넌트 단위 — 각 함수 선언 전에 뭘 하는 함수인지 한 줄 주석
+4. 훅 단위 (useState, useRef, useEffect, useMemo) — 각각 뭘 위한 상태/효과인지 한 줄 주석
+5. JSX 내 주요 블록 — 조건부 렌더링, 리스트 렌더링 등 주요 분기마다 한 줄 주석
+6. 처음 나오는 비직관적인 React 패턴 — 파일 내 첫 등장 시에만 인라인으로 설명 (예: useRef, scrollIntoView, EventSource 등). 이후 같은 패턴은 설명 생략. 다른 파일에서 이미 설명한 패턴도 생략.
+7. 파일 내 일관성 우선 — 한 파일 안에서 같은 수준의 것들은 같은 방식으로
+
+말투는 "~한다" 서술형 금지. 명사구/라벨 스타일로 간결하게. (예: "URL 기반 라우팅 컨텍스트", "에이전트명 → 버블 id 매핑")
+첫 등장 패턴 설명은 핵심 한 구절만. 두 절 이상으로 늘리지 않음.

@@ -55,3 +55,37 @@ backend/
                                                                                                    
   # Real 모드 (501 반환)                                                                             
   USE_MOCK_MODE=false uvicorn main:app --reload
+
+---
+
+## 3. frontend_ui_polish — 2026-04-27
+
+### 작업 내용
+
+**[PRD Viewer]**
+- 좌측 목차(TOC) 패널 고정: `overflow-y: auto` → `overflow: hidden` (스크롤 비활성화)
+- 우측 PRD 콘텐츠 영역에 `overscroll-behavior: contain` 추가 (스크롤 이벤트 전파 차단)
+
+**[History]**
+- job-list / chat-messages-history 양쪽에 `overscroll-behavior: contain` 추가 → 목록/대화 스크롤 독립화
+
+**[ChatBubble — History & Analysis 공통]**
+- `bubble-wrapper` max-width `88%` → `65%` (버블 가로 길이 축소)
+- `AGENT_MESSAGES` 상수 추가: 에이전트별 loading 진행 메시지 & 완료 메시지(done)
+  - loading 시 백엔드 progress 없으면 상수 fallback 사용
+  - done 시 완료 메시지를 출력 상단에 표시 (`.done-msg`)
+- `AGENT_COLORS` 상수 추가: 에이전트별 레이블 색상 (moss green, terracotta, dusty blue 등)
+- `prd_writer` done 버블: "PRD 작성이 완료되었습니다!" + "IdeaVault가 만들어준 나만의 PRD 보기!" 버튼
+- critic done 메시지: `"..."` → `"추가 정보 확인을 완료했습니다!"`
+- "IdeaVault가 만들어준 나만의 PRD 보기!" 중복 제거: Analyze.jsx의 `prdReady` 배너/상태 제거 (ChatBubble이 커버)
+
+### 생성/수정된 파일
+- `frontend/src/pages/Result.css`
+- `frontend/src/pages/History.css`
+- `frontend/src/pages/Analyze.jsx`
+- `frontend/src/pages/Analyze.css`
+- `frontend/src/components/ChatBubble.jsx`
+- `frontend/src/components/ChatBubble.css`
+
+### TODO
+- (없음 — 이번 세션 모든 항목 완료)

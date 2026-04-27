@@ -1,0 +1,51 @@
+/* 상단 네비게이션 바 레이아웃 및 링크 스타일 */
+
+/* 네비게이션 바 전체 — 로고 + 링크 가로 배치 */
+.navbar {
+  display: flex; /* 자식 요소를 가로/세로로 배열하는 레이아웃 방식 */
+  align-items: center; /* 자식 요소를 세로 가운데 정렬 */
+  justify-content: space-between; /* 자식 요소를 양 끝으로 배치 */
+  padding: 0 32px;
+  height: 56px;
+  background: var(--card); /* var(--이름): index.css에서 정의한 CSS 변수 참조 */
+  border-bottom: 1px solid var(--border);
+  position: sticky; /* 스크롤해도 상단에 고정 */
+  top: 0;
+  z-index: 100; /* 다른 요소보다 앞에 렌더링 */
+}
+
+/* 좌측 로고/브랜드명 */
+.navbar-brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.3px; /* 글자 사이 간격 (음수면 좁힘) */
+}
+
+/* 우측 링크 그룹 */
+.navbar-links {
+  display: flex;
+  gap: 8px; /* 자식 요소 사이 간격 */
+}
+
+/* 개별 네비게이션 링크 — 기본 상태 */
+.nav-link {
+  padding: 6px 14px;
+  border-radius: 6px; /* 모서리를 둥글게 */
+  font-size: 14px;
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s; /* 상태 변화를 부드럽게 전환 */
+}
+
+/* 링크 — 호버 */
+.nav-link:hover {
+  background: var(--background);
+  color: var(--text);
+}
+
+/* 링크 — 현재 페이지 (활성화 상태) */
+.nav-link.active {
+  background: var(--background);
+  color: var(--primary);
+  font-weight: 600;
+}
