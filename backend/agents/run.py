@@ -1,8 +1,11 @@
+# 에이전트 파이프라인 CLI 실행 진입점
+# 실행: backend/ 디렉토리에서 python -m agents.run "아이디어 텍스트"
+# (-m 없이 python agents/run.py 로 실행하면 상대 import 오류 발생)
 import asyncio
 import sys
 from pathlib import Path
 
-from backend.agents.orchestrator import run
+from .orchestrator import run
 
 
 def main():
@@ -49,7 +52,7 @@ def main():
     print("...")
 
     # 전체 PRD를 logs/ 디렉터리에 마크다운 파일로 저장
-    logs_dir = Path(__file__).parent / "docs" / "generated_prds"
+    logs_dir = Path(__file__).parent.parent.parent / "docs" / "generated_prds"
     logs_dir.mkdir(parents=True, exist_ok=True)
     out_path = logs_dir / f"prd_{result['job_id']}.md"
     out_path.write_text(result["prd"], encoding="utf-8")
