@@ -47,10 +47,13 @@ function PieChart({ data }) {
 
   return (
     <div className="pie-wrap">
-      <svg viewBox="0 0 200 200" width={180} height={180}>
-        {slices.map((s, i) => (
-          <path key={i} d={slicePath(100, 100, 80, s.start, s.angle)} fill={getModelColor(s.label)} />
-        ))}
+      <svg viewBox="0 0 200 200" className="pie-svg">
+        <circle cx="100" cy="100" r="90" fill="var(--background)" />
+        <g className="pie-slices">
+          {slices.map((s, i) => (
+            <path key={i} d={slicePath(100, 100, 90, s.start, s.angle)} fill={getModelColor(s.label)} />
+          ))}
+        </g>
       </svg>
       <div className="pie-legend">
         {slices.map((s, i) => (
@@ -66,28 +69,81 @@ function PieChart({ data }) {
 }
 
 function ColumnChart({ data }) {
+  const [hovered, setHovered] = useState(null)
   if (!data || data.length === 0) return <p className="chart-empty">데이터 없음</p>
+
   const maxVal = Math.max(...data.map(d => d.value), 1)
-  const BAR_MAX_H = 140
+  const magnitude = Math.pow(10, Math.floor(Math.log10(maxVal)))
+  const norm = maxVal / magnitude
+  const niceMultiple = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10
+  const niceMax = niceMultiple * magnitude
+  const Y_TICKS = 4
+  const ticks = Array.from({ length: Y_TICKS + 1 }, (_, i) => (niceMax / Y_TICKS) * i)
+
+  const SVG_W = 500, SVG_H = 300
+  const ML = 52, MR = 12, MT = 16, MB = 40
+  const CW = SVG_W - ML - MR
+  const CH = SVG_H - MT - MB
+  const barW = Math.max(4, Math.min(32, (CW / data.length) * 0.55))
+
+  function fmt(v) {
+    if (v >= 10000) return `${(v / 1000).toFixed(0)}k`
+    if (v >= 1000) return `${(v / 1000).toFixed(1)}k`
+    return v.toLocaleString()
+  }
+
   return (
-    <div className="column-chart">
-      {data.map((d, i) => {
-        const barH = Math.max(2, Math.round((d.value / maxVal) * BAR_MAX_H))
-        const valLabel = d.value >= 1000 ? `${(d.value / 1000).toFixed(1)}k` : String(d.value)
+    <svg
+      viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+      style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}
+    >
+      {ticks.map((tick, i) => {
+        const y = MT + CH - (tick / niceMax) * CH
         return (
-          <div key={i} className="column-item">
-            <div className="column-bar-area">
-              <span className="column-value">{valLabel}</span>
-              <div
-                className="column-bar-fill"
-                style={{ height: barH, background: getModelColor(d.model) }}
-              />
-            </div>
-            <span className="column-label">{d.label.slice(5)}</span>
-          </div>
+          <g key={i}>
+            <line x1={ML} y1={y} x2={ML + CW} y2={y}
+              stroke="var(--border)" strokeWidth={i === 0 ? 1 : 0.5}
+              strokeDasharray={i === 0 ? '' : '4,3'} />
+            <text x={ML - 6} y={y + 3.5} textAnchor="end" fontSize={10} fill="var(--text-muted)">
+              {fmt(tick)}
+            </text>
+          </g>
         )
       })}
-    </div>
+
+      <line x1={ML} y1={MT} x2={ML} y2={MT + CH} stroke="var(--border)" strokeWidth={1} />
+
+      {data.map((d, i) => {
+        const barH = Math.max(1, (d.value / niceMax) * CH)
+        const cx = ML + (i + 0.5) * (CW / data.length)
+        const by = MT + CH - barH
+        const isHov = hovered === i
+        const tipText = fmt(d.value)
+        const tipW = tipText.length * 7 + 16
+        const tipX = Math.min(Math.max(cx - tipW / 2, ML), ML + CW - tipW)
+
+        return (
+          <g key={i} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
+            <rect x={cx - barW / 2} y={by} width={barW} height={barH}
+              fill={isHov ? 'var(--secondary)' : getModelColor(d.model)} rx={2}
+              style={{ transformBox: 'fill-box', transformOrigin: 'bottom', animation: `bar-rise 0.45s ease ${i * 0.04}s both` }} />
+            <text x={cx} y={MT + CH + 14} textAnchor="middle" fontSize={9} fill="var(--text-muted)">
+              {d.label.slice(5)}
+            </text>
+            {isHov && (
+              <g>
+                <rect x={tipX} y={by - 26} width={tipW} height={20} rx={4}
+                  fill="var(--text)" opacity={0.85} />
+                <text x={tipX + tipW / 2} y={by - 12} textAnchor="middle"
+                  fontSize={10} fill="white" fontWeight="600">
+                  {tipText}
+                </text>
+              </g>
+            )}
+          </g>
+        )
+      })}
+    </svg>
   )
 }
 
@@ -263,12 +319,12 @@ export default function Analytics() {
           </div>
 
           {chartMode === 'model' ? (
-            <div className="chart-section">
+            <div key="model" className="chart-section">
               <h4 className="chart-title">모델 별 사용량</h4>
               <PieChart data={modelChartData} />
             </div>
           ) : (
-            <div className="chart-section">
+            <div key="date" className="chart-section">
               <h4 className="chart-title">날짜 별 사용량</h4>
               <ColumnChart data={dateChartData} />
             </div>

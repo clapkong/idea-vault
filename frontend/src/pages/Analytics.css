@@ -199,6 +199,28 @@
   font-weight: 600;
 }
 
+@keyframes bar-rise {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+@property --pie-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes pie-in {
+  from { --pie-angle: 0deg; }
+  to   { --pie-angle: 360deg; }
+}
+
+.pie-slices {
+  mask-image: conic-gradient(black var(--pie-angle), transparent var(--pie-angle));
+  -webkit-mask-image: conic-gradient(black var(--pie-angle), transparent var(--pie-angle));
+  animation: pie-in 0.55s ease-out both;
+}
+
 .chart-section {
   background: var(--card);
   border: 1px solid var(--border);
@@ -226,22 +248,32 @@
 
 .pie-wrap {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  gap: 24px;
+  flex: 1;
+}
+
+.pie-svg {
+  flex: 0 0 auto;
+  width: 220px;
+  height: 220px;
+  display: block;
 }
 
 .pie-legend {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  width: 100%;
+  gap: 12px;
+  justify-content: center;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   font-size: 13px;
 }
 
@@ -253,70 +285,14 @@
 }
 
 .legend-label {
-  flex: 1;
   color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .legend-pct {
   font-weight: 600;
   color: var(--text-muted);
-}
-
-.column-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  width: 100%;
-  padding-bottom: 4px;
-}
-
-.column-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-}
-
-.column-bar-area {
-  height: 140px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 3px;
-}
-
-.column-bar-fill {
-  width: 60%;
-  max-width: 36px;
-  min-width: 6px;
-  border-radius: 3px 3px 0 0;
-  transition: height 0.4s ease;
-  flex-shrink: 0;
-}
-
-.column-value {
-  font-size: 9px;
-  color: var(--text-muted);
   white-space: nowrap;
-  line-height: 1;
-}
-
-.column-label {
-  font-size: 10px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  text-align: center;
-  line-height: 1;
 }
 
 .bar-chart {

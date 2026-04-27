@@ -235,3 +235,33 @@
 
 ### TODO
 - `backend/mock_agents/prd_*.md` 4개 파일이 완전히 동일 — 나중에 job별 다른 내용으로 교체 필요
+
+---
+
+## Loop 9
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- Analytics: 날짜별 차트 → SVG 기반 `ColumnChart`로 전면 교체
+  - y축 눈금(nice-max 알고리즘), x축 MM-DD 날짜 레이블, 좌측 y축 라인
+  - hover 시 툴팁(값 표시) 구현 (onMouseEnter/Leave 상태)
+- Analytics: 모델별 차트 파이 레이아웃 개선
+  - `pie-wrap` flex-direction row, 파이 좌측 / 범례 우측
+  - `pie-svg` 고정 크기 220×220px, `justify-content: center`로 중앙 정렬
+- Analytics: 차트 탭 전환 시 `key={chartMode}`로 React 리마운트 → 애니메이션 재트리거
+- Analytics: 막대 차트 per-element rise 애니메이션
+  - `@keyframes bar-rise` (scaleY 0→1), 각 rect에 stagger delay (`i * 0.04s`) 적용
+  - SVG `transformBox: fill-box`, `transformOrigin: bottom`으로 하단 기준 상승
+- Analytics: 파이 차트 spread 애니메이션 (sweep 방식)
+  - `@property --pie-angle` 등록 → conic-gradient 마스크 보간 가능
+  - `@keyframes pie-in` (0deg→360deg), `.pie-slices` 클래스에 mask-image 적용
+  - SVG에 `<circle>` 배경 추가 → 원 윤곽 고정, 슬라이스만 12시 방향에서 시계방향 sweep
+- PRD Viewer: `result-content` 좌우 여백 `padding: 32px 14%`로 증가
+
+### 생성/수정된 파일
+- `frontend/src/pages/Analytics.jsx`
+- `frontend/src/pages/Analytics.css`
+- `frontend/src/pages/Result.css`
+
+### TODO
+- `backend/mock_agents/prd_*.md` 4개 파일이 완전히 동일 — 나중에 job별 다른 내용으로 교체 필요
