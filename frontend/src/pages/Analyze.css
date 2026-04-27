@@ -1,0 +1,80 @@
+/* AI 에이전트 채팅 화면 레이아웃 */
+
+/* 페이지 전체 — NavBar 아래 남은 공간을 세로로 채움 */
+.analyze-page {
+  flex: 1; /* 부모 flex 컨테이너에서 남은 공간을 모두 차지 */
+  display: flex; /* 자식 요소를 가로/세로로 배열하는 레이아웃 방식 */
+  flex-direction: column; /* 자식 요소를 세로로 쌓음 */
+  height: calc(100vh - 56px); /* 100vh에서 NavBar 높이(56px)를 뺀 영역 */
+}
+
+/* 채팅 메시지 영역 — 스크롤 가능하도록 overflow 관리 */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 영역 밖으로 내용이 넘치면 숨김 */
+  position: relative; /* 자식 요소의 absolute 위치 기준점 */
+}
+
+/* 메시지 목록 — 세로 스크롤, 좌우 여백 */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto; /* 내용이 넘치면 세로 스크롤 표시 */
+  padding: 24px 10%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* SSE 연결 중 표시 텍스트 */
+.connecting-msg {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted); /* var(--이름): index.css에서 정의한 CSS 변수 참조 */
+  padding: 24px;
+  animation: fade-pulse 1.5s infinite; /* 아래 정의한 애니메이션을 무한 반복 */
+}
+
+/* 깜빡임 애니메이션 — opacity를 반복해서 변화 */
+@keyframes fade-pulse {
+  0%, 100% { opacity: 0.5; } /* opacity: 투명도 (0=완전투명, 1=불투명) */
+  50% { opacity: 1; }
+}
+
+/* 세션 완료/중단/에러 상태 메시지 */
+.session-status-msg {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 12px;
+  background: var(--background);
+  border-radius: 8px; /* 모서리를 둥글게 */
+  margin: 8px auto;
+  border: 1px solid var(--border);
+}
+
+/* 하단 고정 바 — 세션 멈추기 버튼 감싸는 영역 */
+.stop-bar {
+  padding: 12px 48px;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center; /* 자식 요소를 가로 가운데 정렬 */
+}
+
+/* 세션 멈추기 버튼 — 기본 상태 */
+.btn-stop {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 13px;
+  transition: border-color 0.15s, color 0.15s; /* 상태 변화를 부드럽게 전환 */
+}
+
+/* 세션 멈추기 버튼 — 호버 시 빨간색으로 강조 */
+.btn-stop:hover {
+  border-color: #c0392b;
+  color: #c0392b;
+}

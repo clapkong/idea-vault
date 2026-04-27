@@ -1,0 +1,149 @@
+/* PRD 결과 페이지 — 좌측 목차(TOC) + 우측 본문 레이아웃 */
+
+/* 페이지 전체 — 좌우 분할 레이아웃 */
+.result-page {
+  flex: 1; /* 부모 flex 컨테이너에서 남은 공간을 모두 차지 */
+  display: flex; /* 자식 요소를 가로/세로로 배열하는 레이아웃 방식 */
+  overflow: hidden; /* 영역 밖으로 내용이 넘치면 숨김 */
+  min-height: 0; /* flex 자식이 내용보다 더 줄어들 수 있게 허용 */
+}
+
+/* 좌측 목차(TOC) 패널 */
+.result-toc {
+  width: 20%;
+  min-width: 180px;
+  border-right: 1px solid var(--border); /* var(--이름): index.css에서 정의한 CSS 변수 참조 */
+  padding: 24px 16px;
+  background: var(--card);
+  overflow: hidden;
+  flex-shrink: 0; /* 부모가 줄어들어도 TOC 너비 유지 */
+  min-height: 0;
+}
+
+/* 목차 제목 */
+.toc-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase; /* 소문자를 대문자로 표시 */
+  letter-spacing: 0.5px; /* 글자 사이 간격 */
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* 목차 항목 목록 */
+.toc-list {
+  list-style: none; /* 기본 글머리 기호 제거 */
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column; /* 자식 요소를 세로로 쌓음 */
+  gap: 2px; /* 자식 요소 사이 간격 */
+}
+
+/* 목차 개별 항목 버튼 — 기본 상태 */
+.toc-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 6px 8px;
+  font-size: 13px;
+  color: var(--text);
+  border-radius: 6px; /* 모서리를 둥글게 */
+  line-height: 1.4;
+  transition: background 0.12s, color 0.12s; /* 상태 변화를 부드럽게 전환 */
+}
+
+/* 목차 항목 — 호버 시 강조 */
+.toc-item:hover {
+  background: var(--background);
+  color: var(--primary);
+}
+
+/* 우측 PRD 본문 영역 */
+.result-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 본문 상단 헤더 — 뒤로가기 + 제목 + 다운로드 버튼 */
+.result-header {
+  display: flex;
+  align-items: center; /* 자식 요소를 세로 가운데 정렬 */
+  justify-content: space-between; /* 자식 요소를 양 끝으로 배치 */
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  flex-shrink: 0;
+}
+
+/* 뒤로가기 버튼 */
+.btn-back {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 13px;
+  color: var(--text);
+  transition: border-color 0.12s;
+  white-space: nowrap; /* 줄바꿈 방지 */
+  min-width: 100px;
+}
+
+/* 뒤로가기 버튼 — 호버 */
+.btn-back:hover {
+  border-color: var(--secondary);
+  color: var(--primary);
+}
+
+/* 헤더 가운데 제목 */
+.result-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* PRD 마크다운 본문 — 세로 스크롤 */
+.result-content {
+  flex: 1;
+  overflow-y: auto; /* 내용이 넘치면 세로 스크롤 표시 */
+  padding: 32px 14%;
+  overscroll-behavior: contain; /* 본문 끝에서 부모 페이지로 스크롤 전달 방지 */
+}
+
+/* 마크다운 렌더링 결과 스타일 — 각 태그별 폰트/간격 설정 */
+.result-content h1 { font-size: 26px; margin: 24px 0 12px; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+.result-content h2 { font-size: 20px; margin: 20px 0 10px; color: var(--primary); }
+.result-content h3 { font-size: 16px; margin: 16px 0 8px; }
+.result-content p  { font-size: 15px; line-height: 1.8; margin: 8px 0; color: var(--text); }
+.result-content ul,
+.result-content ol { padding-left: 24px; margin: 8px 0; }
+.result-content li { font-size: 15px; line-height: 1.8; color: var(--text); }
+.result-content code { background: var(--background); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 13px; }
+.result-content pre { background: var(--background); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; } /* overflow-x: 가로로 넘치면 스크롤 */
+.result-content blockquote { border-left: 3px solid var(--border); padding-left: 16px; color: var(--text-muted); margin: 12px 0; }
+.result-content table { border-collapse: collapse; width: 100%; margin: 12px 0; } /* border-collapse: 셀 사이 이중 테두리 제거 */
+.result-content th,
+.result-content td { border: 1px solid var(--border); padding: 8px 12px; font-size: 14px; }
+.result-content th { background: var(--border); font-weight: 600; }
+
+/* PRD 다운로드 버튼 */
+.btn-download {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+/* 다운로드 버튼 — 호버 */
+.btn-download:hover {
+  background: var(--secondary);
+}

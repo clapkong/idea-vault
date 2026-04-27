@@ -1,0 +1,199 @@
+/* 에이전트/유저 채팅 버블 공용 스타일 */
+
+/* 버블 한 행 — 아바타 + 버블 가로 배치 */
+.chat-bubble-row {
+  display: flex; /* 자식 요소를 가로/세로로 배열하는 레이아웃 방식 */
+  align-items: flex-start; /* 자식 요소를 세로 위쪽 정렬 */
+  gap: 10px; /* 자식 요소 사이 간격 */
+  margin-bottom: 16px;
+}
+
+/* 유저 버블 행 — 오른쪽 정렬 */
+.user-row {
+  justify-content: flex-end;
+}
+
+/* 에이전트 아바타 이미지 원형 컨테이너 */
+.agent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%; /* 원형으로 만들기 */
+  overflow: hidden; /* 이미지가 원 밖으로 넘치지 않도록 */
+  flex-shrink: 0; /* 부모가 줄어들어도 아바타 크기 유지 */
+  background: var(--border); /* var(--이름): index.css에서 정의한 CSS 변수 참조 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 아바타 이미지 — 원 안을 꽉 채움 */
+.agent-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* 이미지 비율 유지하며 영역을 꽉 채움 */
+}
+
+/* 버블 + 레이블 + 메타정보 묶음 */
+.bubble-wrapper {
+  display: flex;
+  flex-direction: column; /* 자식 요소를 세로로 쌓음 */
+  max-width: 65%;
+  gap: 4px;
+}
+
+/* 유저 버블 래퍼 — 오른쪽 정렬 */
+.user-row .bubble-wrapper {
+  align-items: flex-end;
+}
+
+/* 에이전트 이름 레이블 */
+.bubble-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary);
+  padding-left: 4px;
+}
+
+/* 버블 공통 — 둥근 모서리, 그림자 */
+.bubble {
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* 살짝 뜬 느낌의 그림자 */
+  word-break: break-word; /* 긴 단어가 영역을 벗어나지 않도록 줄바꿈 */
+}
+
+/* 유저 버블 — 우상단 모서리만 뾰족하게 (말풍선 효과) */
+.bubble-user {
+  background: var(--primary);
+  color: #fff;
+  border-top-right-radius: 4px;
+}
+
+/* 에이전트 버블 — 좌상단 모서리만 뾰족하게 (말풍선 효과) */
+.bubble-agent {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top-left-radius: 4px;
+}
+
+/* 버블 내 텍스트 — 줄바꿈 및 들여쓰기 보존 */
+.bubble-text {
+  margin: 0;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap; /* 공백/줄바꿈 그대로 표시 */
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* 유저 버블 텍스트 색상 */
+.bubble-user .bubble-text {
+  color: #fff;
+}
+
+/* 에이전트 마크다운 버블 — 줄바꿈 일반 모드로 전환 */
+.bubble-markdown {
+  white-space: normal;
+}
+
+/* 마크다운 렌더링 결과 스타일 — 각 태그별 간격/폰트 설정 */
+.bubble-markdown p { margin: 0 0 8px; }
+.bubble-markdown p:last-child { margin-bottom: 0; }
+.bubble-markdown ul, .bubble-markdown ol { padding-left: 20px; margin: 4px 0 8px; }
+.bubble-markdown li { margin-bottom: 2px; }
+.bubble-markdown strong { font-weight: 700; }
+.bubble-markdown em { font-style: italic; }
+.bubble-markdown code { background: rgba(0,0,0,0.06); border-radius: 3px; padding: 1px 5px; font-size: 13px; font-family: monospace; }
+.bubble-markdown pre { background: rgba(0,0,0,0.06); border-radius: 6px; padding: 10px; overflow-x: auto; margin: 6px 0; } /* overflow-x: 가로로 넘치면 스크롤 */
+.bubble-markdown pre code { background: none; padding: 0; }
+.bubble-markdown table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; } /* border-collapse: 셀 사이 이중 테두리 제거 */
+.bubble-markdown th, .bubble-markdown td { border: 1px solid var(--border); padding: 5px 10px; }
+.bubble-markdown th { background: rgba(0,0,0,0.04); font-weight: 600; }
+.bubble-markdown h1, .bubble-markdown h2, .bubble-markdown h3 { margin: 6px 0 2px; font-weight: 700; font-size: inherit; }
+.bubble-markdown blockquote { border-left: 3px solid var(--border); padding-left: 12px; color: var(--text-muted); margin: 6px 0; }
+
+/* PRD 완성 시 표시되는 버튼 */
+.prd-view-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 0.15s; /* 상태 변화를 부드럽게 전환 */
+}
+
+/* PRD 보기 버튼 — 호버 */
+.prd-view-btn:hover { background: var(--secondary); }
+
+/* 에이전트 처리 중 로딩 버블 내부 — 점 + 진행 메시지 가로 배치 */
+.bubble-loading-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 로딩 점 3개 컨테이너 */
+.loading-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+/* 로딩 점 — 기본 상태 */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: dot-pulse 1.4s infinite; /* 아래 정의한 애니메이션을 무한 반복 */
+}
+
+/* 2, 3번째 점은 딜레이를 줘서 물결 효과 */
+.dot:nth-child(2) { animation-delay: 0.2s; } /* nth-child(n): n번째 자식 요소 선택 */
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* 빈 점 — 애니메이션 없는 흐린 점 */
+.dot.empty {
+  background: var(--border);
+  animation: none;
+}
+
+/* 로딩 점 깜빡임 — 투명도와 크기를 반복해서 변화 */
+@keyframes dot-pulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } /* transform: 요소 크기/위치/회전 변환 */
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* 에이전트 처리 중 진행 상황 텍스트 */
+.progress-msg {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* 에이전트 완료 메시지 */
+.done-msg {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+
+/* PRD 완성 버블 내부 — 완료 메시지 + 버튼 세로 배치 */
+.bubble-done-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 버블 하단 메타정보 — 시간 + 토큰 수 */
+.bubble-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-left: 4px;
+}
