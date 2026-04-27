@@ -30,7 +30,7 @@
 .bubble-wrapper {
   display: flex;
   flex-direction: column;
-  max-width: 80%;
+  max-width: 65%;
   gap: 4px;
 }
 

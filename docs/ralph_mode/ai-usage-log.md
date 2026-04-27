@@ -210,3 +210,28 @@
 
 ### TODO
 - (없음)
+
+---
+
+## Loop 8
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- ChatBubble: bubble-wrapper max-width `80% → 65%` (가독성 개선)
+- Analyze.jsx: prd_writer 중복 버블 제거 (`lastPrdIdx` 필터, History와 동일 방식 적용)
+- Analytics: 날짜별 차트를 가로 막대(`BarChart`) → 세로 막대(`ColumnChart`)로 교체 (x축: MM-DD, y축: 토큰)
+- 에이전트 프로필 이미지 교체: `public/agents/`를 `dist/agents/`로 동기화
+  - 신규: `analyst.png`, `basic.png` / 삭제: `writer.png` / 나머지 전체 업데이트
+  - 원인: Vite dev server는 `public/` 서빙, 이미지를 `dist/`에만 교체해 반영 안 됐던 문제
+- `agent_profile_color.py` → `tools/agent_profile_color.py` 이동 (프로젝트 유틸 스크립트 정리)
+
+### 생성/수정된 파일
+- `frontend/src/components/ChatBubble.css`
+- `frontend/src/pages/Analytics.css`
+- `frontend/src/pages/Analytics.jsx`
+- `frontend/src/pages/Analyze.jsx`
+- `frontend/public/agents/` (전체 교체)
+- `tools/agent_profile_color.py` (신규, 루트에서 이동)
+
+### TODO
+- `backend/mock_agents/prd_*.md` 4개 파일이 완전히 동일 — 나중에 job별 다른 내용으로 교체 필요

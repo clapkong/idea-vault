@@ -65,6 +65,32 @@ function PieChart({ data }) {
   )
 }
 
+function ColumnChart({ data }) {
+  if (!data || data.length === 0) return <p className="chart-empty">데이터 없음</p>
+  const maxVal = Math.max(...data.map(d => d.value), 1)
+  const BAR_MAX_H = 140
+  return (
+    <div className="column-chart">
+      {data.map((d, i) => {
+        const barH = Math.max(2, Math.round((d.value / maxVal) * BAR_MAX_H))
+        const valLabel = d.value >= 1000 ? `${(d.value / 1000).toFixed(1)}k` : String(d.value)
+        return (
+          <div key={i} className="column-item">
+            <div className="column-bar-area">
+              <span className="column-value">{valLabel}</span>
+              <div
+                className="column-bar-fill"
+                style={{ height: barH, background: getModelColor(d.model) }}
+              />
+            </div>
+            <span className="column-label">{d.label.slice(5)}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function BarChart({ data }) {
   if (!data || data.length === 0) return <p className="chart-empty">데이터 없음</p>
   const maxVal = Math.max(...data.map(d => d.value), 1)
@@ -244,7 +270,7 @@ export default function Analytics() {
           ) : (
             <div className="chart-section">
               <h4 className="chart-title">날짜 별 사용량</h4>
-              <BarChart data={dateChartData} />
+              <ColumnChart data={dateChartData} />
             </div>
           )}
         </div>

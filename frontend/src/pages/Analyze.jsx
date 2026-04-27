@@ -106,6 +106,10 @@ export default function Analyze() {
     setSessionStatus('stopped')
   }
 
+  // prd_writer가 여러 번 등장하면 마지막 것만 표시
+  const lastPrdIdx = messages.reduce((acc, m, i) => m.agent === 'prd_writer' ? i : acc, -1)
+  const displayMessages = messages.filter((m, i) => m.agent !== 'prd_writer' || i === lastPrdIdx)
+
   function getStatusMessage() {
     if (sessionStatus === 'stopped') return '세션이 사용자의 요청으로 종료되었습니다.'
     if (sessionStatus === 'error') return '세션이 에러로 인해 종료되었습니다.'
@@ -120,7 +124,7 @@ export default function Analyze() {
           {sessionStatus === 'connecting' && (
             <div className="connecting-msg">AI 에이전트에 연결 중...</div>
           )}
-          {messages.map(msg => (
+          {displayMessages.map(msg => (
             <ChatBubble key={msg.id} message={msg} jobId={jobId} />
           ))}
           {getStatusMessage() && (

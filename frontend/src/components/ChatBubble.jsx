@@ -27,6 +27,7 @@ const AGENT_ICON_MAP = {
   analyst: 'critic',
 }
 
+
 const AGENT_COLORS = {
   analyst: '#A8A878',
   critic: '#C08574',
