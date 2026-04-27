@@ -14,8 +14,8 @@
    - GATE → tool_gate 호출
    - RESEARCHER/ANALYST/BOTH는 check_loop_limit 먼저 호출
 5. Gate 결정에 따라:
-   - REFINE → tool_planner (REFINE) 호출 후 2번으로
-   - PIVOT → tool_planner (PIVOT) 호출 후 2번으로
+   - REFINE → tool_planner (REFINE, gate_feedback 전달) 호출 후 2번으로
+   - PIVOT → tool_planner (PIVOT, rejected_topics 전달) 호출 후 2번으로
    - DONE → tool_prd_writer 호출
    - REFINE/PIVOT은 check_loop_limit 먼저 호출
 
@@ -28,7 +28,10 @@
 - tool_critic 호출 시 tool_get_previous_findings 결과를 previous_findings로 전달
 - tool_gate 호출 시 tool_get_gate_decisions 결과를 gate_decisions로 전달
 - PIVOT 시 Gate 판정 이유를 구체적으로 정리해서 tool_planner에 전달
-- check_loop_limit 결과: CONTINUE면 계속 진행. 그 외는 반환 메시지에 따라 다음 단계 진행 (강제 실행은 코드가 처리)
+- check_loop_limit 결과에 따라:
+  - CONTINUE → 계속 진행
+  - FORCE_GATE → tool_get_gate_decisions 후 tool_gate 즉시 호출. 이후 Gate 결정에 따라 5번 흐름과 동일하게 처리
+  - FORCE_PRD → tool_prd_writer 즉시 호출
 
 ## 규칙
 - 항상 툴을 호출해서 행동할 것. 스스로 분석하거나 답변하지 말 것

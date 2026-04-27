@@ -92,7 +92,7 @@ def _call(logger: logging.Logger, agent: str, fn: Callable, **kwargs) -> str:
 async def tool_planner(
     mode: str,
     current_topic: str = "",
-    critic_feedback: str = "",
+    gate_feedback: str = "",
     rejected_topics: list = None,
 ) -> str:
     """프로젝트 주제 발굴/정제/전환 에이전트.
@@ -102,7 +102,7 @@ async def tool_planner(
                    mode=mode,
                    user_conditions=_user_conditions,
                    current_topic=current_topic,
-                   critic_feedback=critic_feedback,
+                   gate_feedback=gate_feedback,
                    rejected_topics=rejected_topics or [])
     _current_topic = result
     return result
@@ -265,44 +265,21 @@ def tool_get_gate_decisions() -> str:
 
 @tool
 def check_loop_limit() -> str:
-    """루프 한계 확인. 한계 초과 시 강제 실행 후 결과 반환.
-    반환: CONTINUE / FORCE_GATE 처리 완료 (Gate 결정 포함) / FORCE_PRD 처리 완료"""
-    global _outer, _inner, _prd_result
+    """루프 한계 확인. Force일 경우 logging
+    반환: CONTINUE / FORCE_GATE / FORCE_PRD"""
+    global _inner
 
     status = _check_limit_fn(_outer, _inner)
     _logger.info(f"[check_loop_limit] outer={_outer} inner={_inner} → {status}")
 
     if status == "FORCE_GATE":
-        # 내부 루프 한계 도달 → Gate를 강제 실행해 주제 계속 여부 결정
-        gate_decisions = "\n".join(
-            f"루프 {e['loop']}: {e['gate_decision']}"
-            for e in _loop_history if e.get("gate_decision")
-        )
-        gate_result = _call(_logger, "gate(forced)", gate_agent,
-                            critic_result=_last_critic_result,
-                            user_conditions=_user_conditions,
-                            gate_decisions=gate_decisions)
-        m = re.search(r"결정:\s*(REFINE|PIVOT|DONE)", gate_result)
-        decision = m.group(1) if m else "PIVOT" # 파싱 실패 시 PIVOT으로 안전하게 처리
-
-        entry = next((e for e in _loop_history if e["loop"] == _outer), None)
-        if entry is None:
-            entry = {"loop": _outer, "gate_decision": None, "critics": []}
-            _loop_history.append(entry)
-        entry["gate_decision"] = decision
-        _outer += 1
         _inner = 0
-        _logger.info(f"[check_loop_limit] FORCE_GATE 완료 | decision={decision}")
-        return f"FORCE_GATE 처리 완료 | Gate 결정: {decision}\n{gate_result}"
+        _logger.info("[check_loop_limit] FORCE_GATE")
+        return "FORCE_GATE"
 
     if status == "FORCE_PRD":
-        # 외부 루프 한계 도달 → PRD를 강제 작성하고 종료
-        prd = _call(_logger, "prd_writer(forced)", prd_writer_agent,
-                    user_conditions=_user_conditions,
-                    final_loop=json.dumps(_loop_history, ensure_ascii=False))
-        _prd_result = prd
-        _logger.info("[check_loop_limit] FORCE_PRD 완료")
-        return "FORCE_PRD 처리 완료 | PRD 작성 완료"
+        _logger.info("[check_loop_limit] FORCE_PRD")
+        return "FORCE_PRD"
 
     return "CONTINUE"
 
@@ -331,7 +308,7 @@ async def run(user_conditions: str, job_id: str | None = None) -> dict:
     _user_conditions = user_conditions
     _loop_history = []
     _prd_result = ""
-    _outer = 1
+    _outer = 0
     _inner = 0
     _last_critic_result = ""
     _current_topic = ""
@@ -378,7 +355,8 @@ async def run(user_conditions: str, job_id: str | None = None) -> dict:
         system_prompt=system_prompt,
         name="orchestrator",
     )
-
+    
+    # 오케스트레이터 실행
     await orchestrator.ainvoke({"messages": [HumanMessage(user_conditions)]})
 
     _logger.info(f"[orchestrator] END | prd_length={len(_prd_result)} loops={len(_loop_history)}")
