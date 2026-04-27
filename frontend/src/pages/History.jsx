@@ -45,11 +45,20 @@ function buildChatFromResult(data, inputPreview) {
   return msgs
 }
 
+function HeartIcon({ filled }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+  )
+}
+
 export default function History() {
   const [jobs, setJobs] = useState([])
   const [filtered, setFiltered] = useState([])
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('newest')
+  const [favOnly, setFavOnly] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const [chatMessages, setChatMessages] = useState([])
   const [loadingChat, setLoadingChat] = useState(false)
@@ -69,13 +78,14 @@ export default function History() {
   useEffect(() => {
     let result = jobs.filter(j => {
       const q = search.toLowerCase()
-      return (j.title || '').toLowerCase().includes(q) ||
+      const matchSearch = (j.title || '').toLowerCase().includes(q) ||
         (j.input_preview || '').toLowerCase().includes(q)
+      return matchSearch && (!favOnly || j.favorite)
     })
     if (sort === 'newest') result = [...result].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     else result = [...result].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
     setFiltered(result)
-  }, [jobs, search, sort])
+  }, [jobs, search, sort, favOnly])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -133,10 +143,19 @@ export default function History() {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <select className="sort-select" value={sort} onChange={e => setSort(e.target.value)}>
-            <option value="newest">최신순</option>
-            <option value="oldest">오래된순</option>
-          </select>
+          <div className="sidebar-controls">
+            <select className="sort-select" value={sort} onChange={e => setSort(e.target.value)}>
+              <option value="newest">최신순</option>
+              <option value="oldest">오래된순</option>
+            </select>
+            <button
+              className={`fav-filter-btn ${favOnly ? 'active' : ''}`}
+              onClick={() => setFavOnly(v => !v)}
+              title="즐겨찾기만 보기"
+            >
+              <HeartIcon filled={favOnly} />
+            </button>
+          </div>
         </div>
         <div className="job-list">
           {filtered.length === 0 && <p className="empty-list">항목이 없습니다.</p>}
@@ -149,11 +168,11 @@ export default function History() {
               <div className="job-card-header">
                 <span className="job-title">{job.title || '제목 없음'}</span>
                 <button
-                  className="fav-btn"
+                  className={`fav-btn ${job.favorite ? 'fav-active' : ''}`}
                   onClick={e => handleFavorite(e, job.job_id, job.favorite)}
                   title={job.favorite ? '즐겨찾기 해제' : '즐겨찾기'}
                 >
-                  {job.favorite ? '❤️' : '🤍'}
+                  <HeartIcon filled={job.favorite} />
                 </button>
               </div>
               <div className="job-card-date">{formatDate(job.created_at)}</div>

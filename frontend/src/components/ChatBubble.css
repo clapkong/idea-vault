@@ -30,7 +30,7 @@
 .bubble-wrapper {
   display: flex;
   flex-direction: column;
-  max-width: 70%;
+  max-width: 88%;
   gap: 4px;
 }
 
@@ -70,11 +70,32 @@
   font-size: 14px;
   line-height: 1.6;
   white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .bubble-user .bubble-text {
   color: #fff;
 }
+
+.bubble-markdown {
+  white-space: normal;
+}
+
+.bubble-markdown p { margin: 0 0 8px; }
+.bubble-markdown p:last-child { margin-bottom: 0; }
+.bubble-markdown ul, .bubble-markdown ol { padding-left: 20px; margin: 4px 0 8px; }
+.bubble-markdown li { margin-bottom: 2px; }
+.bubble-markdown strong { font-weight: 700; }
+.bubble-markdown em { font-style: italic; }
+.bubble-markdown code { background: rgba(0,0,0,0.06); border-radius: 3px; padding: 1px 5px; font-size: 13px; font-family: monospace; }
+.bubble-markdown pre { background: rgba(0,0,0,0.06); border-radius: 6px; padding: 10px; overflow-x: auto; margin: 6px 0; }
+.bubble-markdown pre code { background: none; padding: 0; }
+.bubble-markdown table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; }
+.bubble-markdown th, .bubble-markdown td { border: 1px solid var(--border); padding: 5px 10px; }
+.bubble-markdown th { background: rgba(0,0,0,0.04); font-weight: 600; }
+.bubble-markdown h1, .bubble-markdown h2, .bubble-markdown h3 { margin: 8px 0 4px; font-weight: 700; }
+.bubble-markdown blockquote { border-left: 3px solid var(--border); padding-left: 12px; color: var(--text-muted); margin: 6px 0; }
 
 .bubble-loading-content {
   display: flex;

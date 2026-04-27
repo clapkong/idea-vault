@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import './ChatBubble.css'
 
 const AGENT_LABELS = {
@@ -67,14 +69,18 @@ export default function ChatBubble({ message }) {
               <LoadingDots />
               {progressMessage && <span className="progress-msg">{progressMessage}</span>}
             </div>
-          ) : (
+          ) : isUser ? (
             <pre className="bubble-text">{content}</pre>
+          ) : (
+            <div className="bubble-text bubble-markdown">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+            </div>
           )}
         </div>
-        {!isUser && (timestamp || tokens) && (
+        {!isUser && (timestamp || typeof tokens === 'number') && (
           <div className="bubble-meta">
             {timestamp && <span>{formatTime(timestamp)}</span>}
-            {tokens && <span>{tokens.toLocaleString()} tokens</span>}
+            {typeof tokens === 'number' && <span>{tokens.toLocaleString()} tokens</span>}
           </div>
         )}
       </div>

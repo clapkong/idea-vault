@@ -100,13 +100,58 @@
   flex: 1;
 }
 
+.sidebar-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sidebar-controls .sort-select {
+  flex: 1;
+}
+
 .fav-btn {
   background: none;
   border: none;
-  font-size: 16px;
-  padding: 0;
+  padding: 2px;
   cursor: pointer;
   flex-shrink: 0;
+  color: var(--border);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.fav-btn:hover {
+  color: #e05c7e;
+}
+
+.fav-btn.fav-active {
+  color: #e05c7e;
+}
+
+.fav-filter-btn {
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  transition: border-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.fav-filter-btn:hover {
+  border-color: #e05c7e;
+  color: #e05c7e;
+}
+
+.fav-filter-btn.active {
+  border-color: #e05c7e;
+  color: #e05c7e;
+  background: rgba(224, 92, 126, 0.07);
 }
 
 .job-card-date {

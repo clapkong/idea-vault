@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import './Result.css'
 
 function extractH2Sections(md) {
@@ -71,7 +72,7 @@ export default function Result() {
         </div>
 
         <div className="result-content" ref={contentRef}>
-          <ReactMarkdown>{prd}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{prd}</ReactMarkdown>
         </div>
 
         <div className="result-footer">

@@ -21,6 +21,20 @@ export default function Analyze() {
   const firstEventRef = useRef(false)
 
   useEffect(() => {
+    function handleKeyDown(e) {
+      // Prevent browser shortcuts (ctrl+s, ctrl+p, etc.) from interfering
+      if (e.ctrlKey || e.metaKey) {
+        const blocked = ['s', 'p', 'r', 'u', 'd', 'f', 'g', 'j', 'k', 'l']
+        if (blocked.includes(e.key.toLowerCase())) {
+          e.preventDefault()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  useEffect(() => {
     const es = new EventSource(`/stream/${jobId}`)
     esRef.current = es
 
