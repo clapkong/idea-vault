@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useLocation, useNavigate } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 import ChatBubble from '../components/ChatBubble'
 import './Analyze.css'
 
 export default function Analyze() {
   const { jobId } = useParams()
   const location = useLocation()
-  const navigate = useNavigate()
   const idea = location.state?.idea || ''
 
   const [messages, setMessages] = useState(() => {
@@ -90,7 +89,6 @@ export default function Analyze() {
     } else if (data.type === 'done') {
       setSessionStatus('done')
       if (esRef.current) esRef.current.close()
-      setTimeout(() => navigate(`/result/${jobId}`), 1500)
     }
   }
 
@@ -111,7 +109,7 @@ export default function Analyze() {
   function getStatusMessage() {
     if (sessionStatus === 'stopped') return '세션이 사용자의 요청으로 종료되었습니다.'
     if (sessionStatus === 'error') return '세션이 에러로 인해 종료되었습니다.'
-    if (sessionStatus === 'done') return 'PRD가 완성되었습니다. 결과 페이지로 이동합니다...'
+    if (sessionStatus === 'done') return 'PRD가 완성되었습니다!'
     return null
   }
 

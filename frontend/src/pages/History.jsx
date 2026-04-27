@@ -13,7 +13,6 @@ function buildChatFromResult(data, inputPreview) {
   const msgs = []
   if (inputPreview) msgs.push({ id: 'user', role: 'user', content: inputPreview })
 
-  // Use loop_history if populated, otherwise reconstruct from events
   const lh = data.loop_history || []
   if (lh.length > 0) {
     lh.forEach((entry, i) => {
@@ -42,7 +41,12 @@ function buildChatFromResult(data, inputPreview) {
         })
       })
   }
-  return msgs
+
+  // prd_writer가 여러 번 등장하면 마지막 것만 표시
+  const lastPrdIdx = msgs.reduce((acc, m, i) => m.agent === 'prd_writer' ? i : acc, -1)
+  return lastPrdIdx === -1
+    ? msgs
+    : msgs.filter((m, i) => m.agent !== 'prd_writer' || i === lastPrdIdx)
 }
 
 function HeartIcon({ filled }) {
