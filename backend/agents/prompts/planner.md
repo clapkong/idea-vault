@@ -12,10 +12,9 @@
 사용자 조건에 가장 잘 맞는 프로젝트 주제 하나를 발굴해.
 
 ### REFINE
-주제는 그대로 유지하되,Gate 피드백을 반영해서 기획을 다듬어
-- TOPIC: 그대로 유지
-- DESCRIPTION: Gate 피드백 반영해서 필요시에 수정
-- EXTERNAL/INTERNAL: 새로 확인해야 할 검증 포인트 작성 
+TOPIC, DESCRIPTION은 그대로 유지하고,
+Gate 피드백의 보강 방향을 EXTERNAL/INTERNAL 형식으로만 변환해서 출력해.
+새로운 검증 항목을 추가하거나 이미 확인된 내용을 다시 쓰지 말 것.
 
 현재 주제: {current_topic}
 Gate 피드백: {gate_feedback}
