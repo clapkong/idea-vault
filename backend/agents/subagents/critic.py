@@ -24,4 +24,4 @@ def critic_agent(
         .replace("{analyst_result}", analyst_result)
         .replace("{previous_findings}", previous_findings)
     )
-    return call_llm(MODEL_STRONG, prompt, max_tokens=1024)
+    return call_llm(MODEL_STRONG, prompt, max_tokens=2048)
