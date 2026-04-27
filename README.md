@@ -32,20 +32,34 @@ PRD 결과물 (Markdown)
 
 ## Getting Started
 
-### Frontend
+### 1. 환경 설정
 
 ```bash
-cd frontend
-npm install
-npm run dev      # http://localhost:5173
+# Python 가상환경 생성 및 의존성 설치
+cd backend
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cd ..
+
+# .env 파일 생성 (.env.example 복사 후 API 키 입력)
+cp .env.example .env
 ```
 
-### Backend (목업 모드)
+### 2. 백엔드 실행
 
 ```bash
 cd backend
-pip install -r requirements.txt
+source venv/bin/activate
 uvicorn main:app --reload --port 8000
+```
+
+**목업 모드** (API 키 없이 UI 확인): `.env`에서 `USE_MOCK_MODE=true` 설정
+
+### 3. 프론트엔드 실행 (새 터미널)
+
+```bash
+cd frontend && npm install && npm run dev   # http://localhost:5173
 ```
 
 > 백엔드가 `localhost:8000`에서 실행 중이어야 프런트엔드 API 프록시가 정상 작동합니다.

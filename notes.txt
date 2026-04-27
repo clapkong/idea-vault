@@ -1,0 +1,24 @@
+TODO: subagent1 - orchestrator - subagent2 사이 orchestrator가 subagent 1 결과를 보고 subagent2를 호출하려고 할 때 사이의 갭이 멈춘건가 꽤 길게 느껴짐. 
+AI 에이전트 어쩌구... 하고 뜨잖아. 그냥 대기중 버블 뜨기 전에도 세션이 살아있다 여부만 어떻게든 나타네고 싶은데 어려울가? 
+
+TODO: http://localhost:5173/health 페이지를 찾을 수 없습니다
+
+TODO: FORCE PRD가 critics 바로 다음에 실행되는 문제 (42378efb)
+TODO: 
+
+mock 모드 fixtures -> 기존데이터 저장한 폴더로 통일
+
+
+[완료] 나 mock mode 대대적인 업데이트를 하고 싶어. mock 모드 fixtures -> 기존데이터 저장한 폴더.          
+  왜냐하면 fixtures로 하니까 이전 버전 json을 가져와서 깨지더라고. 그러니까 사실상 stream만 이전에   
+  실행한 데이터로? 하면 되는거? orchestrator 부르는거만 안 부르고 기존 meta.json 같이. delay는       
+  @fixtures/92b2d589.json 보고 패턴 분석해서 deterministic하게그냥 하드코딩 해줘. json 자체 말고,    
+  mock 모드에. 흠 아닌가 그냥 meta.json 시간 보고 해도 되려나? 그냥 너가 알아서 해.     
+
+
+
+[완료] tokens 표시: total input: | output: 
+[완료] README.md에 venv 설치하는거부터. pip install이 필요하지 않는가. 근데 지금 requirements.txt가 저기에 있는게 맞나? react 관련도 저기 들어있는 것 같은데. 분리해야하나? 하나의 venv로 실행하는게 맞나..? 
+[완료] health check - request 
+[완료] history에 시간 안 뜸
+[완료] 프론트에 약간의 오류 - profile picture이랑 subagent랑 제대로 매치가 안되는 오류 (정확히는 analyst가 critic 프로필이 뜨는게 끝인거 같기도 하고)
