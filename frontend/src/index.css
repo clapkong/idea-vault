@@ -1,4 +1,6 @@
-/* 디자인 토큰 — 색상·폰트 변수를 한 곳에서 관리한다 */
+/* 전역 CSS 변수 및 브라우저 기본값 초기화 */
+
+/* 디자인 토큰 — 색상·폰트 변수를 한 곳에서 관리 */
 :root {
   --primary: #8B6F47;
   --secondary: #A68A64;
@@ -10,55 +12,63 @@
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
-  font-family: var(--sans);
+  font-family: var(--sans); /* var(--이름): 위에서 정의한 CSS 변수를 참조 */
   font-size: 16px;
   color: var(--text);
   background: var(--background);
-  -webkit-font-smoothing: antialiased;
+  -webkit-font-smoothing: antialiased; /* macOS/iOS에서 폰트를 더 부드럽게 렌더링 */
 }
 
+/* 모든 요소의 크기 계산 방식을 border-box로 통일 */
 *, *::before, *::after {
-  box-sizing: border-box;
+  box-sizing: border-box; /* padding/border가 width에 포함되도록 설정 */
 }
 
+/* 페이지 전체 높이 확보 */
 html {
   height: 100%;
 }
 
+/* 기본 여백 제거, 스크롤 숨김 (각 페이지가 자체적으로 스크롤 관리) */
 body {
   margin: 0;
   height: 100%;
   background: var(--background);
-  overflow: hidden;
+  overflow: hidden; /* 영역 밖으로 내용이 넘치면 숨김 */
 }
 
+/* React 앱 루트 — NavBar + 페이지를 세로로 쌓는 레이아웃 */
 #root {
   height: 100%;
-  display: flex;
-  flex-direction: column;
+  display: flex; /* 자식 요소를 가로/세로로 배열하는 레이아웃 방식 */
+  flex-direction: column; /* 자식 요소를 세로로 쌓음 */
   overflow: hidden;
 }
 
+/* 제목 태그 기본 여백 제거 */
 h1, h2, h3, h4, h5, h6 {
   color: var(--text);
   margin: 0;
 }
 
+/* 문단 기본 여백 제거 */
 p {
   margin: 0;
 }
 
+/* 버튼 기본 스타일 */
 button {
   cursor: pointer;
   font-family: var(--sans);
 }
 
+/* 입력 요소 폰트 통일 (브라우저 기본값 무시) */
 input, textarea, select {
   font-family: var(--sans);
 }
 
+/* 링크 밑줄·색 제거 */
 a {
   text-decoration: none;
-  color: inherit;
+  color: inherit; /* 부모 요소의 색상 그대로 사용 */
 }
-

@@ -1,8 +1,10 @@
+// 에이전트·유저 채팅 버블 공용 컴포넌트 — 에이전트별 색상·아이콘·로딩 상태·Markdown 렌더링
 import { useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import './ChatBubble.css'
 
+// 에이전트 키 → 표시 이름 매핑
 const AGENT_LABELS = {
   planner: 'Planner',
   researcher: 'Researcher',
@@ -14,6 +16,7 @@ const AGENT_LABELS = {
   user: 'User',
 }
 
+// 에이전트별 진행 중·완료 안내 메시지
 const AGENT_MESSAGES = {
   planner: { progress: '주제를 발굴하고 있습니다...', done: '주제 발굴을 완료했습니다! 결과를 보여드릴게요.' },
   researcher: { progress: '관련 자료를 검색하고 있습니다...', done: '자료 검색을 완료했습니다! 결과를 보여드릴게요.' },
@@ -23,11 +26,12 @@ const AGENT_MESSAGES = {
   prd_writer: { progress: '최종 PRD를 작성하고 있습니다...', done: 'PRD 작성이 완료되었습니다!' },
 }
 
+// 아이콘 파일명 예외 매핑 (analyst는 critic 이미지 공유)
 const AGENT_ICON_MAP = {
   analyst: 'critic',
 }
 
-
+// 에이전트별 버블 레이블 색상
 const AGENT_COLORS = {
   analyst: '#A8A878',
   critic: '#C08574',
@@ -37,6 +41,7 @@ const AGENT_COLORS = {
   researcher: '#8BA888',
 }
 
+// 로딩 중 애니메이션 점 3개
 function LoadingDots() {
   return (
     <span className="loading-dots">
@@ -50,6 +55,7 @@ function LoadingDots() {
   )
 }
 
+// 타임스탬프 → 12시간제 시간 문자열 변환 (HH:MM:SS 또는 ISO 문자열 모두 처리)
 function formatTime(ts) {
   if (!ts) return ''
   if (/^\d{2}:\d{2}:\d{2}$/.test(ts)) {
@@ -67,6 +73,7 @@ function formatTime(ts) {
   }
 }
 
+// 채팅 버블 컴포넌트 — role에 따라 유저·에이전트 레이아웃 전환
 export default function ChatBubble({ message, jobId }) {
   const navigate = useNavigate()
   const { role, agent, content, timestamp, tokens, loading, progressMessage } = message
@@ -77,18 +84,21 @@ export default function ChatBubble({ message, jobId }) {
 
   return (
     <div className={`chat-bubble-row ${isUser ? 'user-row' : 'agent-row'}`}>
+      {/* 에이전트 아바타 (좌측) — onError: 이미지 로드 실패 시 숨김 */}
       {!isUser && (
         <div className="agent-avatar">
           <img src={iconSrc} alt={label} onError={e => { e.target.style.display = 'none' }} />
         </div>
       )}
       <div className="bubble-wrapper">
+        {/* 에이전트 이름 레이블 */}
         {!isUser && (
           <span className="bubble-label" style={{ color: AGENT_COLORS[agent] || 'var(--secondary)' }}>
             {label}
           </span>
         )}
         <div className={`bubble ${isUser ? 'bubble-user' : 'bubble-agent'} ${loading ? 'bubble-loading' : ''}`}>
+          {/* 로딩 중 — 점 애니메이션 + 진행 메시지 */}
           {loading ? (
             <div className="bubble-loading-content">
               <LoadingDots />
@@ -97,6 +107,7 @@ export default function ChatBubble({ message, jobId }) {
               </span>
             </div>
           ) : agent === 'prd_writer' && jobId ? (
+            // prd_writer 완료 — PRD 결과 페이지 이동 버튼
             <div className="bubble-done-content">
               {AGENT_MESSAGES.prd_writer?.done && (
                 <p className="done-msg">{AGENT_MESSAGES.prd_writer.done}</p>
@@ -106,8 +117,10 @@ export default function ChatBubble({ message, jobId }) {
               </button>
             </div>
           ) : isUser ? (
+            // 유저 메시지 — 줄바꿈 보존을 위해 pre 사용
             <pre className="bubble-text">{content}</pre>
           ) : (
+            // 에이전트 메시지 — Markdown 렌더링
             <div className="bubble-text bubble-markdown">
               {AGENT_MESSAGES[agent]?.done && (
                 <p className="done-msg">{AGENT_MESSAGES[agent].done}</p>
@@ -116,6 +129,7 @@ export default function ChatBubble({ message, jobId }) {
             </div>
           )}
         </div>
+        {/* 시간·토큰 메타 정보 — typeof 체크: tokens가 0일 때도 표시 */}
         {!isUser && (timestamp || typeof tokens === 'number') && (
           <div className="bubble-meta">
             {timestamp && <span>{formatTime(timestamp)}</span>}
@@ -123,6 +137,7 @@ export default function ChatBubble({ message, jobId }) {
           </div>
         )}
       </div>
+      {/* 유저 아바타 (우측) */}
       {isUser && (
         <div className="agent-avatar">
           <img src="/agents/user.png" alt="User" onError={e => { e.target.style.display = 'none' }} />

@@ -1,63 +1,74 @@
+/* 토큰 사용량 통계 페이지 레이아웃 및 차트 스타일 */
+
+/* 페이지 전체 — 세로 스크롤 가능 */
 .analytics-page {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  flex: 1; /* 부모 flex 컨테이너에서 남은 공간을 모두 차지 */
+  display: flex; /* 자식 요소를 가로/세로로 배열하는 레이아웃 방식 */
+  flex-direction: column; /* 자식 요소를 세로로 쌓음 */
   padding: 20px 32px;
-  gap: 16px;
-  overflow-y: auto;
+  gap: 16px; /* 자식 요소 사이 간격 */
+  overflow-y: auto; /* 내용이 넘치면 세로 스크롤 표시 */
 }
 
+/* 페이지 제목 */
 .analytics-title {
   font-size: 22px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--text); /* var(--이름): index.css에서 정의한 CSS 변수 참조 */
 }
 
+/* 좌우 2컬럼 레이아웃 — 왼쪽(테이블), 오른쪽(차트) */
 .analytics-main {
   display: flex;
   gap: 28px;
   flex: 1;
-  min-height: 0;
+  min-height: 0; /* flex 자식이 내용보다 더 줄어들 수 있게 허용 */
 }
 
+/* 왼쪽 영역 — 기간 필터, 요약 카드, 테이블 */
 .analytics-left {
-  flex: 4;
-  min-width: 0;
+  flex: 4; /* 형제 요소 대비 비율로 공간 차지 (오른쪽과 4:4로 균등 분할) */
+  min-width: 0; /* flex 자식의 overflow 방지 */
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* 오른쪽 영역 — 차트 */
 .analytics-right {
   flex: 4;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 18px;
-  align-self: flex-start;
+  align-self: flex-start; /* 콘텐츠 높이만큼만 차지 */
   padding-top: 25px;
 }
 
+/* 기간 필터 버튼 그룹 */
 .range-btns {
   display: flex;
   gap: 8px;
 }
 
+/* 기간 필터 개별 버튼 — 기본 상태 */
 .range-btn {
   background: var(--card);
   border: 1.5px solid var(--border);
-  border-radius: 20px;
+  border-radius: 20px; /* 모서리를 둥글게 */
   padding: 6px 16px;
   font-size: 13px;
   color: var(--text);
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  transition: background 0.12s, border-color 0.12s, color 0.12s; /* 상태 변화를 부드럽게 전환 */
 }
 
+/* 기간 필터 버튼 — 호버 */
 .range-btn:hover {
   border-color: var(--secondary);
   color: var(--primary);
 }
 
+/* 기간 필터 버튼 — 선택된 상태 */
 .range-btn.active {
   background: var(--primary);
   border-color: var(--primary);
@@ -65,11 +76,13 @@
   font-weight: 600;
 }
 
+/* 요약 카드 가로 배열 */
 .summary-cards {
   display: flex;
   gap: 16px;
 }
 
+/* 총 세션 수 / 총 토큰 수 카드 */
 .summary-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -81,20 +94,23 @@
   min-width: 150px;
 }
 
+/* 카드 레이블 (총 세션, 총 토큰) */
 .summary-label {
   font-size: 11px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  text-transform: uppercase; /* 소문자를 대문자로 표시 */
+  letter-spacing: 0.5px; /* 글자 사이 간격 */
   color: var(--text-muted);
 }
 
+/* 카드 수치 */
 .summary-value {
   font-size: 20px;
   font-weight: 700;
   color: var(--text);
 }
 
+/* 테이블 + CSV 버튼 감싸는 영역 */
 .analytics-table-area {
   flex: 1;
   display: flex;
@@ -103,15 +119,17 @@
   min-height: 0;
 }
 
+/* 데이터 로딩 중 표시 */
 .table-loading {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: center; /* 자식 요소를 세로 가운데 정렬 */
+  justify-content: center; /* 자식 요소를 가로 가운데 정렬 */
   color: var(--text-muted);
   font-size: 14px;
 }
 
+/* 스크롤 가능한 테이블 래퍼 */
 .table-scroll {
   flex: 0.9;
   overflow-y: auto;
@@ -120,12 +138,14 @@
   background: var(--card);
 }
 
+/* 테이블 기본 스타일 */
 .analytics-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: collapse; /* 셀 사이 이중 테두리 제거 */
   font-size: 14px;
 }
 
+/* 테이블 헤더 셀 */
 .analytics-table th {
   background: var(--background);
   padding: 11px 18px;
@@ -136,36 +156,42 @@
   letter-spacing: 0.3px;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
-  position: sticky;
+  position: sticky; /* 스크롤해도 헤더가 상단에 고정 */
   top: 0;
 }
 
+/* 테이블 데이터 셀 */
 .analytics-table td {
   padding: 11px 18px;
   border-bottom: 1px solid var(--border);
   color: var(--text);
 }
 
+/* 마지막 행 하단 구분선 제거 */
 .analytics-table tbody tr:last-child td {
   border-bottom: none;
 }
 
+/* 행 호버 시 배경 강조 */
 .analytics-table tbody tr:hover td {
   background: var(--background);
 }
 
+/* 제목 셀 — 긴 텍스트 말줄임 처리 */
 .title-cell {
   max-width: 200px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-overflow: ellipsis; /* 넘치는 텍스트를 ...으로 표시 */
+  white-space: nowrap; /* 줄바꿈 방지 */
 }
 
+/* CSV 버튼을 오른쪽 정렬 */
 .table-footer {
   display: flex;
   justify-content: flex-end;
 }
 
+/* CSV 내보내기 버튼 */
 .btn-csv {
   background: var(--primary);
   color: #fff;
@@ -177,15 +203,18 @@
   transition: background 0.15s;
 }
 
+/* CSV 버튼 — 호버 */
 .btn-csv:hover {
   background: var(--secondary);
 }
 
+/* 모델별/날짜별 차트 모드 선택 버튼 그룹 */
 .chart-mode-chips {
   display: flex;
   gap: 8px;
 }
 
+/* 차트 모드 버튼 — 기본 상태 */
 .chart-chip {
   background: var(--card);
   border: 1.5px solid var(--border);
@@ -196,6 +225,7 @@
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
+/* 차트 모드 버튼 — 선택된 상태 */
 .chart-chip.active {
   background: var(--primary);
   border-color: var(--primary);
@@ -203,28 +233,33 @@
   font-weight: 600;
 }
 
+/* 막대 차트 등장 애니메이션 — 아래에서 위로 올라오는 효과 */
 @keyframes bar-rise {
   from { transform: scaleY(0); }
   to   { transform: scaleY(1); }
 }
 
+/* 파이 차트 애니메이션용 커스텀 CSS 속성 선언 — @property로 타입을 지정해야 애니메이션 가능 */
 @property --pie-angle {
   syntax: '<angle>';
   inherits: false;
   initial-value: 0deg;
 }
 
+/* 파이 차트 등장 애니메이션 — 0도에서 360도로 펼쳐지는 효과 */
 @keyframes pie-in {
   from { --pie-angle: 0deg; }
   to   { --pie-angle: 360deg; }
 }
 
+/* 파이 조각 — conic-gradient 마스크로 애니메이션 적용 */
 .pie-slices {
-  mask-image: conic-gradient(black var(--pie-angle), transparent var(--pie-angle));
-  -webkit-mask-image: conic-gradient(black var(--pie-angle), transparent var(--pie-angle));
+  mask-image: conic-gradient(black var(--pie-angle), transparent var(--pie-angle)); /* 보이는 영역을 각도로 제어 */
+  -webkit-mask-image: conic-gradient(black var(--pie-angle), transparent var(--pie-angle)); /* Safari 지원 */
   animation: pie-in 0.55s ease-out both;
 }
 
+/* 차트 카드 — 제목 + 차트 감싸는 박스 */
 .chart-section {
   background: var(--card);
   border: 1px solid var(--border);
@@ -235,12 +270,14 @@
   gap: 12px;
 }
 
+/* 차트 제목 */
 .chart-title {
   font-size: 14px;
   font-weight: 700;
   color: var(--text);
 }
 
+/* 데이터 없을 때 표시 */
 .chart-empty {
   font-size: 14px;
   color: var(--text-muted);
@@ -248,6 +285,7 @@
   margin: auto;
 }
 
+/* 파이 차트 + 범례 가로 배열 */
 .pie-wrap {
   display: flex;
   flex-direction: row;
@@ -256,13 +294,15 @@
   gap: 24px;
 }
 
+/* 파이 차트 SVG 크기 고정 */
 .pie-svg {
-  flex: 0 0 auto;
+  flex: 0 0 auto; /* flex로 인해 크기가 변하지 않도록 고정 */
   width: 220px;
   height: 220px;
   display: block;
 }
 
+/* 범례 — 색상 점 + 레이블 + 비율 세로 나열 */
 .pie-legend {
   flex: 0 0 auto;
   display: flex;
@@ -271,6 +311,7 @@
   justify-content: center;
 }
 
+/* 범례 개별 항목 */
 .legend-item {
   display: flex;
   align-items: center;
@@ -278,30 +319,35 @@
   font-size: 13px;
 }
 
+/* 범례 색상 점 */
 .legend-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
+  border-radius: 50%; /* 원형으로 만들기 */
+  flex-shrink: 0; /* 부모가 줄어들어도 점 크기 유지 */
 }
 
+/* 범례 모델명 */
 .legend-label {
   color: var(--text);
   white-space: nowrap;
 }
 
+/* 범례 비율 수치 */
 .legend-pct {
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
 }
 
+/* 에이전트별 가로 막대 차트 컨테이너 */
 .bar-chart {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
+/* 막대 한 행 — 레이블 + 트랙 + 수치 */
 .bar-row {
   display: flex;
   align-items: center;
@@ -309,6 +355,7 @@
   font-size: 13px;
 }
 
+/* 막대 왼쪽 레이블 — 넘치면 말줄임 */
 .bar-label {
   width: 80px;
   font-size: 12px;
@@ -319,6 +366,7 @@
   white-space: nowrap;
 }
 
+/* 막대가 채워지는 배경 트랙 */
 .bar-track {
   flex: 1;
   height: 18px;
@@ -327,12 +375,14 @@
   overflow: hidden;
 }
 
+/* 실제 막대 — width는 JS에서 비율로 계산해 인라인으로 주입 */
 .bar-fill {
   height: 100%;
   border-radius: 4px;
   transition: width 0.3s;
 }
 
+/* 막대 오른쪽 수치 */
 .bar-value {
   width: 70px;
   text-align: right;

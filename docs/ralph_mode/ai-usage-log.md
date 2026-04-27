@@ -334,3 +334,90 @@
 
 ### TODO
 - (이전 TODO 동일하게 유효)
+
+---
+
+## CSS 주석 + 구조 정리
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- `App.css` / `index.css` 역할 분리
+  - 기존: `.btn-primary` 공통 버튼 스타일이 `index.css`에 있었음
+  - 변경: `index.css`는 CSS 변수 + html/body/root 리셋만, `.btn-primary`는 `App.css`로 이동
+- 전체 CSS 파일에 이해하기 쉬운 주석 추가
+  - 파일 상단: 파일 역할 한 줄 설명
+  - 셀렉터마다: 어떤 스타일 담당인지 한 줄
+  - 비직관적인 CSS 속성(flex 축약값, var(), overflow, position 등)은 파일 내 첫 등장 시에만 인라인 설명
+
+### 생성/수정된 파일
+- `frontend/src/App.css`
+- `frontend/src/index.css`
+- `frontend/src/main.jsx`
+- `frontend/src/App.jsx`
+- `frontend/src/pages/Analyze.css`
+- `frontend/src/pages/Analytics.css`
+- `frontend/src/pages/History.css`
+- `frontend/src/pages/Home.css`
+- `frontend/src/pages/Result.css`
+- `frontend/src/components/NavBar.css`
+- `frontend/src/components/ChatBubble.css`
+
+### TODO
+- JSX 파일 주석 미완료 (CSS만 완료) → 다음 세션에서 완료
+
+### 가상 프롬프트
+`index.css`는 CSS 변수 + html/body/root 리셋만 담당하도록 하고, `.btn-primary` 공통 버튼 스타일은 `App.css`로 옮겨줘.
+
+그리고 모든 CSS 파일에 주석을 달아줘. 규칙은 아래와 같아.
+- 파일 상단에 이 파일이 뭔지 한 줄
+- 셀렉터마다 어떤 스타일 담당인지 한 줄
+- 비직관적인 CSS 속성(flex 축약값, `var()`, `overflow`, `position`, `transition`, `letter-spacing`, `text-transform`, `border-radius`, `border-collapse` 등)은 파일 내 첫 등장 시에만 인라인으로 짧게 설명, 이후엔 반복하지 마
+- 주석은 간결하게, `/* 내용이 넘치면 세로 스크롤 표시 */` 정도 수준으로
+
+---
+
+## JSX 파일 주석 추가
+날짜/시간: 2026-04-27
+
+### 작업 내용
+전체 JSX 파일에 아래 7가지 주석 규칙 일괄 적용.
+
+1. 파일 상단 — 컴포넌트 역할 한 줄
+2. 상수/설정 객체 — 각각 한 줄
+3. 함수/컴포넌트 선언 전 — 한 줄
+4. 훅(useState, useRef, useEffect, useMemo) — 각각 한 줄
+5. JSX 내 주요 블록(조건부·리스트 렌더링) — 한 줄
+6. 비직관적 React 패턴 — 파일 내 첫 등장만 설명, 이후 동일 파일·다른 파일 재등장 모두 생략
+7. 파일 내 일관성 유지
+
+**말투**: "~한다" 서술형 금지. 명사구/라벨 스타일로 간결하게.  
+**설명 깊이**: 첫 등장 패턴은 핵심 한 구절만, 두 절 이상으로 늘리지 않음.
+
+### 생성/수정된 파일
+- `frontend/src/App.jsx`
+- `frontend/src/main.jsx`
+- `frontend/src/pages/Analytics.jsx`
+- `frontend/src/pages/Analyze.jsx`
+- `frontend/src/pages/History.jsx`
+- `frontend/src/pages/Home.jsx`
+- `frontend/src/pages/NotFound.jsx`
+- `frontend/src/pages/Result.jsx`
+- `frontend/src/components/ChatBubble.jsx`
+- `frontend/src/components/NavBar.jsx`
+
+### TODO
+- (없음)
+
+### 가상 프롬프트
+JSX 파일에 주석을 달아줘. 규칙은 아래와 같아.
+
+1. 파일 상단 — 이 컴포넌트가 무엇을 하는지 한 줄 주석
+2. 상수/설정 객체 (예: AGENT_COLORS, EXAMPLE_PROMPTS) — 각각 한 줄 주석으로 뭔지 설명
+3. 함수/컴포넌트 단위 — 각 함수 선언 전에 뭘 하는 함수인지 한 줄 주석
+4. 훅 단위 (useState, useRef, useEffect, useMemo) — 각각 뭘 위한 상태/효과인지 한 줄 주석
+5. JSX 내 주요 블록 — 조건부 렌더링, 리스트 렌더링 등 주요 분기마다 한 줄 주석
+6. 처음 나오는 비직관적인 React 패턴 — 파일 내 첫 등장 시에만 인라인으로 설명 (예: useRef, scrollIntoView, EventSource 등). 이후 같은 패턴은 설명 생략. 다른 파일에서 이미 설명한 패턴도 생략.
+7. 파일 내 일관성 우선 — 한 파일 안에서 같은 수준의 것들은 같은 방식으로
+
+말투는 "~한다" 서술형 금지. 명사구/라벨 스타일로 간결하게. (예: "URL 기반 라우팅 컨텍스트", "에이전트명 → 버블 id 매핑")
+첫 등장 패턴 설명은 핵심 한 구절만. 두 절 이상으로 늘리지 않음.

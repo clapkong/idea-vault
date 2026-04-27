@@ -1,20 +1,24 @@
 /* 모든 페이지에서 공통으로 쓰는 버튼 스타일 */
+
+/* 기본 버튼 */
 .btn-primary {
-  background: var(--primary);
+  background: var(--primary); /* var(--이름): index.css에서 정의한 CSS 변수 참조 */
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 8px; /* 모서리를 둥글게 */
   padding: 9px 20px;
   font-size: 14px;
   font-weight: 600;
-  transition: background 0.15s, opacity 0.15s;
+  transition: background 0.15s, opacity 0.15s; /* 상태 변화를 부드럽게 전환 */
 }
 
+/* 호버 시 색 변경 (비활성화 상태 제외) */
 .btn-primary:hover:not(:disabled) {
   background: var(--secondary);
 }
 
+/* 비활성화 상태 */
 .btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  opacity: 0.6; /* 반투명으로 흐리게 */
+  cursor: not-allowed; /* 마우스 커서를 금지 모양으로 */
 }

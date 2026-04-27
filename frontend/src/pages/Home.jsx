@@ -1,7 +1,9 @@
+// 홈 페이지 — 아이디어 입력 폼 + 예시 프롬프트 + /generate 제출
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css'
 
+// 예시 아이디어 목록 (레이블 + 본문)
 const EXAMPLE_PROMPTS = [
   {
     label: '💼 취업 포트폴리오',
@@ -17,15 +19,21 @@ const EXAMPLE_PROMPTS = [
   },
 ]
 
+// 입력 글자 수 제한
 const MAX_LEN = 500
 const MIN_LEN = 20
 
+// 홈 메인 컴포넌트
 export default function Home() {
+  // 텍스트 입력값
   const [text, setText] = useState('')
+  // 제출 중 로딩 상태
   const [loading, setLoading] = useState(false)
+  // 유효성 검사·서버 에러 메시지
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
+  // /generate 호출 후 분석 페이지로 이동 — state로 idea 텍스트 전달
   async function handleSubmit() {
     if (text.trim().length < MIN_LEN) {
       setError(`최소 ${MIN_LEN}자 이상 입력해주세요.`)
@@ -47,6 +55,7 @@ export default function Home() {
     }
   }
 
+  // Cmd/Ctrl+Enter 단축키로 제출
   function handleKeyDown(e) {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       handleSubmit()
@@ -74,6 +83,7 @@ export default function Home() {
             <span className={`char-counter ${text.length < MIN_LEN && text.length > 0 ? 'warn' : ''}`}>
               {text.length}/{MAX_LEN}자
             </span>
+            {/* 로딩 중 버튼 비활성화 */}
             <button
               className="btn-primary"
               onClick={handleSubmit}
@@ -82,11 +92,13 @@ export default function Home() {
               {loading ? '처리 중...' : '추천 받기'}
             </button>
           </div>
+          {/* 에러 메시지 */}
           {error && <p className="error-msg">{error}</p>}
         </div>
 
         <div className="example-chips">
           <span className="chips-label">예시 아이디어</span>
+          {/* 예시 칩 목록 */}
           <div className="chips-row">
             {EXAMPLE_PROMPTS.map((p, i) => (
               <button

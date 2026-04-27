@@ -1,14 +1,17 @@
+// 히스토리 페이지 — 좌측 세션 목록(검색·정렬·즐겨찾기·삭제) + 우측 채팅 미리보기
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ChatBubble from '../components/ChatBubble'
 import './History.css'
 
+// 날짜 문자열 → 한국어 형식 변환 (예: 2024. 1. 15.)
 function formatDate(str) {
   if (!str) return ''
   const d = new Date(str)
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+// loop_history 또는 events에서 ChatBubble용 메시지 배열 생성
 function buildChatFromResult(data, inputPreview) {
   const msgs = []
   if (inputPreview) msgs.push({ id: 'user', role: 'user', content: inputPreview })
@@ -49,6 +52,7 @@ function buildChatFromResult(data, inputPreview) {
     : msgs.filter((m, i) => m.agent !== 'prd_writer' || i === lastPrdIdx)
 }
 
+// 즐겨찾기 하트 아이콘 SVG
 function HeartIcon({ filled }) {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -57,18 +61,30 @@ function HeartIcon({ filled }) {
   )
 }
 
+// 히스토리 메인 컴포넌트
 export default function History() {
+  // 전체 세션 목록 (API 원본)
   const [jobs, setJobs] = useState([])
+  // 필터·정렬 적용된 목록
   const [filtered, setFiltered] = useState([])
+  // 검색어
   const [search, setSearch] = useState('')
+  // 정렬 기준 ('newest' | 'oldest')
   const [sort, setSort] = useState('newest')
+  // 즐겨찾기만 보기 필터
   const [favOnly, setFavOnly] = useState(false)
+  // 우측 미리보기에 표시 중인 세션 ID
   const [selectedId, setSelectedId] = useState(null)
+  // 우측 채팅 미리보기 메시지 목록
   const [chatMessages, setChatMessages] = useState([])
+  // 채팅 미리보기 로딩 상태
   const [loadingChat, setLoadingChat] = useState(false)
+  // useNavigate: 프로그래밍 방식으로 페이지 이동 (PRD 결과 페이지)
   const navigate = useNavigate()
+  // 자동 스크롤 대상 DOM 노드
   const chatEndRef = useRef(null)
 
+  // 초기 세션 목록 로드 + 첫 항목 자동 선택
   useEffect(() => {
     fetch('/history')
       .then(r => r.json())
@@ -79,6 +95,7 @@ export default function History() {
       .catch(() => {})
   }, [])
 
+  // 검색어·정렬·즐겨찾기 필터 적용
   useEffect(() => {
     let result = jobs.filter(j => {
       const q = search.toLowerCase()
@@ -91,10 +108,12 @@ export default function History() {
     setFiltered(result)
   }, [jobs, search, sort, favOnly])
 
+  // 채팅 메시지 추가 시 맨 아래로 자동 스크롤
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chatMessages])
 
+  // 세션 선택 + 채팅 미리보기 로드
   function selectJob(jobId, inputPreview) {
     setSelectedId(jobId)
     setLoadingChat(true)
@@ -108,6 +127,7 @@ export default function History() {
       .finally(() => setLoadingChat(false))
   }
 
+  // 즐겨찾기 토글 — e.stopPropagation: 부모 카드의 onClick 전파 차단
   function handleFavorite(e, jobId, current) {
     e.stopPropagation()
     fetch(`/jobs/${jobId}/favorite`, {
@@ -122,6 +142,7 @@ export default function History() {
       .catch(() => {})
   }
 
+  // 소프트 삭제 + 다음 항목 자동 선택
   function handleDelete(e, jobId) {
     e.stopPropagation()
     if (!window.confirm('정말 이 항목을 삭제하시겠습니까?')) return
@@ -162,7 +183,9 @@ export default function History() {
           </div>
         </div>
         <div className="job-list">
+          {/* 빈 목록 안내 */}
           {filtered.length === 0 && <p className="empty-list">항목이 없습니다.</p>}
+          {/* 세션 카드 목록 */}
           {filtered.map(job => (
             <div
               key={job.job_id}
@@ -195,7 +218,9 @@ export default function History() {
       </div>
 
       <div className="history-chat">
+        {/* 채팅 로딩 중 */}
         {loadingChat && <div className="chat-loading">불러오는 중...</div>}
+        {/* 채팅 미리보기 */}
         {!loadingChat && selectedId && (
           <>
             <div className="chat-messages-history">
@@ -209,6 +234,7 @@ export default function History() {
             </div>
           </>
         )}
+        {/* 항목 미선택 안내 */}
         {!loadingChat && !selectedId && (
           <div className="no-selection">히스토리 항목을 선택하세요.</div>
         )}

@@ -1,5 +1,7 @@
+// 404 폴백 페이지 — 매칭 경로 없을 때 표시, 홈 이동 버튼 제공
 import { useNavigate } from 'react-router-dom'
 
+// 404 페이지 컴포넌트
 export default function NotFound() {
   const navigate = useNavigate()
   return (
