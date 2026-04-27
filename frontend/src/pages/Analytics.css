@@ -2,21 +2,40 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 32px 40px;
-  gap: 24px;
-  overflow-y: auto;
-}
-
-.analytics-header {
-  display: flex;
-  flex-direction: column;
+  padding: 20px 32px;
   gap: 16px;
+  overflow-y: auto;
 }
 
 .analytics-title {
   font-size: 22px;
   font-weight: 700;
   color: var(--text);
+}
+
+.analytics-main {
+  display: flex;
+  gap: 28px;
+  flex: 1;
+  min-height: 0;
+}
+
+.analytics-left {
+  flex: 4;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.analytics-right {
+  flex: 4;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-self: flex-start;
+  padding-top: 25px;
 }
 
 .range-btns {
@@ -76,15 +95,8 @@
   color: var(--text);
 }
 
-.analytics-body {
-  display: flex;
-  gap: 28px;
-  flex: 1;
-  min-height: 0;
-}
-
 .analytics-table-area {
-  flex: 5;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -101,7 +113,7 @@
 }
 
 .table-scroll {
-  flex: 1;
+  flex: 0.9;
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -169,14 +181,6 @@
   background: var(--secondary);
 }
 
-.analytics-chart-area {
-  flex: 4;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-}
-
 .chart-mode-chips {
   display: flex;
   gap: 8px;
@@ -225,12 +229,10 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 20px;
-  flex: 1;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  overflow-y: auto;
+  gap: 12px;
 }
 
 .chart-title {
@@ -252,7 +254,6 @@
   align-items: center;
   justify-content: center;
   gap: 24px;
-  flex: 1;
 }
 
 .pie-svg {

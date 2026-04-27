@@ -106,7 +106,7 @@
 - ChatBubble: 에이전트 버블에 ReactMarkdown + remark-gfm 렌더링 적용
 - PRD Viewer: remark-gfm 설치 및 적용으로 테이블 깨짐 수정
 - PRD Viewer: TOC가 콘텐츠와 함께 스크롤되는 오류 수정 (position: sticky)
-- PRD Writer: 뒤로가기 버튼 두 줄로 깨지는 현상 수정 (min-width, white-space: nowrap)
+- PRD Viewer: 다운로드 버튼 헤더로 이동 — footer 제거, 헤더 우측에 'PRD 다운로드' 버튼 배치
 - History: ❤️/🤍 이모티콘 → SVG 하트 아이콘으로 교체
 - History: 즐겨찾기만 보기 필터 버튼 구현 (favOnly 상태)
 - Home: 예시 Chip을 전체 텍스트에서 이모티콘+키워드 형태로 개선
@@ -230,7 +230,7 @@
 - `frontend/src/pages/Analytics.css`
 - `frontend/src/pages/Analytics.jsx`
 - `frontend/src/pages/Analyze.jsx`
-- `frontend/public/agents/` (전체 교체)
+- `frontend/src/pages/agents/` (전체 교체)
 - `tools/agent_profile_color.py` (신규, 루트에서 이동)
 
 ### TODO
@@ -304,3 +304,33 @@
 - `/generate` job_id 하드코딩 (`"92b2d589"`) — 실제 구현 시 UUID 생성 + DB 저장으로 교체
 - Analytics pandas + CSV pipeline 전환 예정 (TODO 주석으로 지점 표시됨)
 - `backend/mock_agents/prd_*.md` 4개 파일이 완전히 동일 — 나중에 job별 다른 내용으로 교체 필요
+
+---
+
+## Loop 11
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- Analytics: 날짜별 `ColumnChart` → 모델별 색상 스택 막대 차트로 개편
+  - `dateChartData` 구조 변경: 날짜별 모델 분리 집계 (`{ label, total, segments: [{model, value}] }`)
+  - 각 날짜 막대를 모델별 세그먼트로 쌓아 올림, `getModelColor`로 색상 구분
+  - hover 툴팁: 모델별 색 네모 + 토큰 수 + 합계 멀티라인 표시
+- Analytics: 파이차트 hover 툴팁 추가
+  - 마우스 위치 따라오는 절대 위치 div 툴팁
+  - 모델 색 네모 + 모델명 + 토큰 수 표시
+- Analytics: 전체 페이지 레이아웃 2컬럼으로 재구성
+  - 기존: header(전체폭) + body(테이블|차트) 구조
+  - 변경: title(전체폭) + analytics-main(analytics-left | analytics-right)
+  - `analytics-left`: range-btns + summary-cards + table (flex: 4)
+  - `analytics-right`: chart-mode-chips + chart-section (flex: 4, align-self: flex-start)
+  - range-btns와 chart-mode-chips가 동일 수직 위치에서 시작
+  - `padding-top`으로 오른쪽 열 수직 위치 미세 조정
+- Analytics: y축 숫자 k 약자 제거 → `toLocaleString()` 그대로 표시
+- Analytics: `chart-section` padding 축소 (`20px` → `14px 16px`)
+
+### 생성/수정된 파일
+- `frontend/src/pages/Analytics.jsx`
+- `frontend/src/pages/Analytics.css`
+
+### TODO
+- (이전 TODO 동일하게 유효)

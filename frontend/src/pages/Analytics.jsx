@@ -20,6 +20,7 @@ function getModelColor(model) {
 }
 
 function PieChart({ data }) {
+  const [tooltip, setTooltip] = useState(null)
   if (!data || data.length === 0) return <p className="chart-empty">데이터 없음</p>
   const total = data.reduce((s, d) => s + d.value, 0)
   let cumAngle = 0
@@ -46,12 +47,27 @@ function PieChart({ data }) {
   }
 
   return (
-    <div className="pie-wrap">
-      <svg viewBox="0 0 200 200" className="pie-svg">
+    <div className="pie-wrap" style={{ position: 'relative' }}>
+      <svg viewBox="0 0 200 200" className="pie-svg"
+        onMouseLeave={() => setTooltip(null)}
+      >
         <circle cx="100" cy="100" r="90" fill="var(--background)" />
         <g className="pie-slices">
           {slices.map((s, i) => (
-            <path key={i} d={slicePath(100, 100, 90, s.start, s.angle)} fill={getModelColor(s.label)} />
+            <path
+              key={i}
+              d={slicePath(100, 100, 90, s.start, s.angle)}
+              fill={getModelColor(s.label)}
+              style={{ cursor: 'pointer' }}
+              onMouseEnter={e => {
+                const rect = e.currentTarget.closest('.pie-wrap').getBoundingClientRect()
+                setTooltip({ slice: s, x: e.clientX - rect.left, y: e.clientY - rect.top })
+              }}
+              onMouseMove={e => {
+                const rect = e.currentTarget.closest('.pie-wrap').getBoundingClientRect()
+                setTooltip(prev => prev ? { ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top } : null)
+              }}
+            />
           ))}
         </g>
       </svg>
@@ -64,6 +80,29 @@ function PieChart({ data }) {
           </div>
         ))}
       </div>
+      {tooltip && (
+        <div style={{
+          position: 'absolute',
+          left: tooltip.x + 10,
+          top: tooltip.y - 52,
+          background: 'var(--text)',
+          color: 'white',
+          borderRadius: 6,
+          padding: '5px 10px',
+          fontSize: 11,
+          pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+          opacity: 0.88,
+          zIndex: 10,
+          lineHeight: 1.6,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}>
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 1, background: getModelColor(tooltip.slice.label), flexShrink: 0 }} />
+            {tooltip.slice.label}
+          </div>
+          <div style={{ paddingLeft: 14 }}>{tooltip.slice.value.toLocaleString()} tokens</div>
+        </div>
+      )}
     </div>
   )
 }
@@ -72,7 +111,7 @@ function ColumnChart({ data }) {
   const [hovered, setHovered] = useState(null)
   if (!data || data.length === 0) return <p className="chart-empty">데이터 없음</p>
 
-  const maxVal = Math.max(...data.map(d => d.value), 1)
+  const maxVal = Math.max(...data.map(d => d.total), 1)
   const magnitude = Math.pow(10, Math.floor(Math.log10(maxVal)))
   const norm = maxVal / magnitude
   const niceMultiple = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10
@@ -87,8 +126,6 @@ function ColumnChart({ data }) {
   const barW = Math.max(4, Math.min(32, (CW / data.length) * 0.55))
 
   function fmt(v) {
-    if (v >= 10000) return `${(v / 1000).toFixed(0)}k`
-    if (v >= 1000) return `${(v / 1000).toFixed(1)}k`
     return v.toLocaleString()
   }
 
@@ -114,30 +151,66 @@ function ColumnChart({ data }) {
       <line x1={ML} y1={MT} x2={ML} y2={MT + CH} stroke="var(--border)" strokeWidth={1} />
 
       {data.map((d, i) => {
-        const barH = Math.max(1, (d.value / niceMax) * CH)
         const cx = ML + (i + 0.5) * (CW / data.length)
-        const by = MT + CH - barH
         const isHov = hovered === i
-        const tipText = fmt(d.value)
-        const tipW = tipText.length * 7 + 16
+
+        const segRects = []
+        let stackY = MT + CH
+        for (const seg of d.segments) {
+          const h = Math.max(1, (seg.value / niceMax) * CH)
+          const y = stackY - h
+          stackY = y
+          segRects.push({ ...seg, y, h })
+        }
+        const topY = stackY
+
+        const hasMult = d.segments.length > 1
+        const tipLines = hasMult
+          ? [...d.segments.map(seg => ({ text: `${seg.model}: ${fmt(seg.value)}`, bold: false, model: seg.model })), { text: `합계: ${fmt(d.total)}`, bold: true, model: null }]
+          : [{ text: fmt(d.total), bold: true, model: null }]
+        const lineH = 14
+        const padX = 10, padY = 6
+        const tipW = Math.max(...tipLines.map(l => l.text.length * 6 + (l.model ? 12 : 0))) + padX * 2
+        const tipH = tipLines.length * lineH + padY * 2
         const tipX = Math.min(Math.max(cx - tipW / 2, ML), ML + CW - tipW)
+        const tipTopY = topY - tipH - 6
 
         return (
           <g key={i} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
-            <rect x={cx - barW / 2} y={by} width={barW} height={barH}
-              fill={isHov ? 'var(--secondary)' : getModelColor(d.model)} rx={2}
-              style={{ transformBox: 'fill-box', transformOrigin: 'bottom', animation: `bar-rise 0.45s ease ${i * 0.04}s both` }} />
+            {segRects.map((seg, si) => (
+              <rect
+                key={si}
+                x={cx - barW / 2} y={seg.y} width={barW} height={seg.h}
+                fill={isHov ? 'var(--secondary)' : getModelColor(seg.model)}
+                rx={si === segRects.length - 1 ? 2 : 0}
+                style={{ transformBox: 'fill-box', transformOrigin: 'bottom', animation: `bar-rise 0.45s ease ${i * 0.04}s both` }}
+              />
+            ))}
             <text x={cx} y={MT + CH + 14} textAnchor="middle" fontSize={9} fill="var(--text-muted)">
               {d.label.slice(5)}
             </text>
             {isHov && (
               <g>
-                <rect x={tipX} y={by - 26} width={tipW} height={20} rx={4}
+                <rect x={tipX} y={tipTopY} width={tipW} height={tipH} rx={4}
                   fill="var(--text)" opacity={0.85} />
-                <text x={tipX + tipW / 2} y={by - 12} textAnchor="middle"
-                  fontSize={10} fill="white" fontWeight="600">
-                  {tipText}
-                </text>
+                {tipLines.map((line, li) => (
+                  <g key={li}>
+                    {line.model && (
+                      <rect
+                        x={tipX + padX}
+                        y={tipTopY + padY + li * lineH + 2}
+                        width={8} height={8} rx={1}
+                        fill={getModelColor(line.model)}
+                      />
+                    )}
+                    <text
+                      x={tipX + padX + (line.model ? 12 : 0)}
+                      y={tipTopY + padY + li * lineH + 10}
+                      fontSize={10} fill="white" fontWeight={line.bold ? '700' : '400'}>
+                      {line.text}
+                    </text>
+                  </g>
+                ))}
               </g>
             )}
           </g>
@@ -211,11 +284,17 @@ export default function Analytics() {
     rows.forEach(r => {
       const d = (r.date || '').slice(0, 10)
       if (!d) return
-      acc[d] = { value: (acc[d]?.value || 0) + (r.tokens || 0), model: r.model }
+      const m = r.model || 'unknown'
+      if (!acc[d]) acc[d] = {}
+      acc[d][m] = (acc[d][m] || 0) + (r.tokens || 0)
     })
     return Object.entries(acc)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([label, v]) => ({ label, value: v.value, model: v.model }))
+      .map(([label, models]) => ({
+        label,
+        total: Object.values(models).reduce((s, v) => s + v, 0),
+        segments: Object.entries(models).map(([model, value]) => ({ model, value })),
+      }))
   }, [rows])
 
   function handleCSV() {
@@ -236,68 +315,68 @@ export default function Analytics() {
 
   return (
     <div className="analytics-page">
-      <div className="analytics-header">
-        <h2 className="analytics-title">토큰 사용량 통계</h2>
-        <div className="range-btns">
-          {RANGES.map(r => (
-            <button
-              key={r}
-              className={`range-btn ${range === r ? 'active' : ''}`}
-              onClick={() => setRange(r)}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-        <div className="summary-cards">
-          <div className="summary-card">
-            <span className="summary-label">총 세션</span>
-            <span className="summary-value">{summary.count}개</span>
-          </div>
-          <div className="summary-card">
-            <span className="summary-label">총 토큰</span>
-            <span className="summary-value">{summary.tokens.toLocaleString()}</span>
-          </div>
-        </div>
-      </div>
+      <h2 className="analytics-title">토큰 사용량 통계</h2>
 
-      <div className="analytics-body">
-        <div className="analytics-table-area">
-          {loading ? (
-            <div className="table-loading">불러오는 중...</div>
-          ) : (
-            <div className="table-scroll">
-              <table className="analytics-table">
-                <thead>
-                  <tr>
-                    <th>날짜</th>
-                    <th>제목</th>
-                    <th>모델</th>
-                    <th>토큰</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.length === 0 && (
-                    <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>데이터 없음</td></tr>
-                  )}
-                  {rows.map((r, i) => (
-                    <tr key={i}>
-                      <td>{(r.date || '').slice(0, 10)}</td>
-                      <td className="title-cell">{r.title || '-'}</td>
-                      <td>{r.model || '-'}</td>
-                      <td>{(r.tokens || 0).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      <div className="analytics-main">
+        <div className="analytics-left">
+          <div className="range-btns">
+            {RANGES.map(r => (
+              <button
+                key={r}
+                className={`range-btn ${range === r ? 'active' : ''}`}
+                onClick={() => setRange(r)}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+          <div className="summary-cards">
+            <div className="summary-card">
+              <span className="summary-label">총 세션</span>
+              <span className="summary-value">{summary.count}개</span>
             </div>
-          )}
-          <div className="table-footer">
-            <button className="btn-csv" onClick={handleCSV}>CSV로 내보내기</button>
+            <div className="summary-card">
+              <span className="summary-label">총 토큰</span>
+              <span className="summary-value">{summary.tokens.toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="analytics-table-area">
+            {loading ? (
+              <div className="table-loading">불러오는 중...</div>
+            ) : (
+              <div className="table-scroll">
+                <table className="analytics-table">
+                  <thead>
+                    <tr>
+                      <th>날짜</th>
+                      <th>제목</th>
+                      <th>모델</th>
+                      <th>토큰</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.length === 0 && (
+                      <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>데이터 없음</td></tr>
+                    )}
+                    {rows.map((r, i) => (
+                      <tr key={i}>
+                        <td>{(r.date || '').slice(0, 10)}</td>
+                        <td className="title-cell">{r.title || '-'}</td>
+                        <td>{r.model || '-'}</td>
+                        <td>{(r.tokens || 0).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="table-footer">
+              <button className="btn-csv" onClick={handleCSV}>CSV로 내보내기</button>
+            </div>
           </div>
         </div>
 
-        <div className="analytics-chart-area">
+        <div className="analytics-right">
           <div className="chart-mode-chips">
             <button
               className={`chart-chip ${chartMode === 'model' ? 'active' : ''}`}
@@ -312,7 +391,6 @@ export default function Analytics() {
               날짜별
             </button>
           </div>
-
           {chartMode === 'model' ? (
             <div key="model" className="chart-section">
               <h4 className="chart-title">모델 별 사용량</h4>
@@ -329,3 +407,4 @@ export default function Analytics() {
     </div>
   )
 }
+
