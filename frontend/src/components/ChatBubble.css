@@ -30,7 +30,7 @@
 .bubble-wrapper {
   display: flex;
   flex-direction: column;
-  max-width: 88%;
+  max-width: 65%;
   gap: 4px;
 }
 
@@ -146,6 +146,19 @@
 .progress-msg {
   font-size: 13px;
   color: var(--text-muted);
+}
+
+.done-msg {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+
+.bubble-done-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .bubble-meta {

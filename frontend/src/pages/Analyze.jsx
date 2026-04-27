@@ -14,7 +14,6 @@ export default function Analyze() {
     return [{ id: 'user-msg', role: 'user', content: idea }]
   })
   const [sessionStatus, setSessionStatus] = useState('connecting') // 'connecting' | 'running' | 'done' | 'stopped' | 'error'
-  const [prdReady, setPrdReady] = useState(false)
   const chatEndRef = useRef(null)
   const esRef = useRef(null)
   const agentBubblesRef = useRef({})
@@ -88,9 +87,6 @@ export default function Analyze() {
           ? { ...m, loading: false, content: data.output || '', tokens: data.tokens }
           : m
       ))
-      if (data.agent === 'prd_writer') {
-        setPrdReady(true)
-      }
     } else if (data.type === 'done') {
       setSessionStatus('done')
       if (esRef.current) esRef.current.close()
@@ -135,13 +131,6 @@ export default function Analyze() {
           <div ref={chatEndRef} />
         </div>
 
-        {prdReady && (
-          <div className="prd-ready-banner">
-            <button className="btn-primary" onClick={() => navigate(`/result/${jobId}`)}>
-              완성된 PRD 보기
-            </button>
-          </div>
-        )}
       </div>
 
       {(sessionStatus === 'running' || sessionStatus === 'connecting') && (

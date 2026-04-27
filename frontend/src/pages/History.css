@@ -58,6 +58,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overscroll-behavior: contain;
 }
 
 .empty-list {
@@ -208,6 +209,7 @@
   padding: 24px 48px;
   display: flex;
   flex-direction: column;
+  overscroll-behavior: contain;
 }
 
 .history-chat-footer {
