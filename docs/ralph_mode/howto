@@ -1,3 +1,0 @@
-claude plugin install ralph-loop@claude-plugins-official
-claude
-/ralph-loop "$(cat ../docs/ralph_mode/ralph-prompt.md)" --max-iterations 3 --completion-promise "FRONTEND_COMPLETE"
