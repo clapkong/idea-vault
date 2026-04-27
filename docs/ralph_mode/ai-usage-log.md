@@ -156,3 +156,33 @@
 
 ### TODO
 - (없음 — 이전 TODO인 Token Analytics 백엔드 구조 개편은 계속 유효)
+
+---
+
+## Loop 6
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- PRD Viewer: TOC 패널 `overflow: hidden`으로 고정 (스크롤 완전 비활성화)
+- PRD Viewer: result-content에 `overscroll-behavior: contain` 추가
+- History: job-list / chat-messages-history 양쪽에 `overscroll-behavior: contain` → 목록/대화 스크롤 독립화
+- ChatBubble: `bubble-wrapper` max-width `88%` → `65%` (버블 가로 길이 축소)
+- ChatBubble: `AGENT_MESSAGES` 상수 추가 — 에이전트별 progress/done 메시지
+  - loading 시 백엔드 메시지 없으면 상수 fallback
+  - done 시 완료 메시지를 출력 상단에 표시 (`.done-msg`)
+- ChatBubble: `AGENT_COLORS` 상수 추가 — 에이전트별 레이블 색상 (palette 기반)
+- ChatBubble: critic done 메시지 `"..."` → `"추가 정보 확인을 완료했습니다!"`
+- ChatBubble: prd_writer done 버블 — "PRD 작성이 완료되었습니다!" + 버튼
+- Analyze: `prdReady` 배너/상태 제거 — ChatBubble 버튼과 중복 표시 버그 수정
+
+### 생성/수정된 파일
+- frontend/src/pages/Result.css
+- frontend/src/pages/History.css
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/Analyze.css
+- frontend/src/components/ChatBubble.jsx
+- frontend/src/components/ChatBubble.css
+- docs/claude_code/ai-usage-log.md
+
+### TODO
+- (없음)
