@@ -127,7 +127,7 @@ export default function Analyze() {
             <div className="connecting-msg">AI 에이전트에 연결 중...</div>
           )}
           {messages.map(msg => (
-            <ChatBubble key={msg.id} message={msg} />
+            <ChatBubble key={msg.id} message={msg} jobId={jobId} />
           ))}
           {getStatusMessage() && (
             <div className="session-status-msg">{getStatusMessage()}</div>

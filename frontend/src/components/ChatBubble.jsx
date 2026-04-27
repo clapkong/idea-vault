@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import './ChatBubble.css'
@@ -47,7 +48,8 @@ function formatTime(ts) {
   }
 }
 
-export default function ChatBubble({ message }) {
+export default function ChatBubble({ message, jobId }) {
+  const navigate = useNavigate()
   const { role, agent, content, timestamp, tokens, loading, progressMessage } = message
   const isUser = role === 'user'
   const label = isUser ? 'User' : (AGENT_LABELS[agent] || agent)
@@ -69,6 +71,10 @@ export default function ChatBubble({ message }) {
               <LoadingDots />
               {progressMessage && <span className="progress-msg">{progressMessage}</span>}
             </div>
+          ) : agent === 'prd_writer' && jobId ? (
+            <button className="prd-view-btn" onClick={() => navigate(`/result/${jobId}`)}>
+              IdeaVault가 만들어준 나만의 PRD 보기!
+            </button>
           ) : isUser ? (
             <pre className="bubble-text">{content}</pre>
           ) : (

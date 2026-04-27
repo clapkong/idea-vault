@@ -195,7 +195,7 @@ export default function History() {
         {!loadingChat && selectedId && (
           <>
             <div className="chat-messages-history">
-              {chatMessages.map(msg => <ChatBubble key={msg.id} message={msg} />)}
+              {chatMessages.map(msg => <ChatBubble key={msg.id} message={msg} jobId={selectedId} />)}
               <div ref={chatEndRef} />
             </div>
             <div className="history-chat-footer">

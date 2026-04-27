@@ -1,8 +1,8 @@
 .result-page {
   flex: 1;
   display: flex;
-  height: calc(100vh - 56px);
   overflow: hidden;
+  min-height: 0;
 }
 
 .result-toc {
@@ -13,11 +13,7 @@
   background: var(--card);
   overflow-y: auto;
   flex-shrink: 0;
-  height: 100%;
-  position: sticky;
-  top: 0;
-  align-self: flex-start;
-  max-height: calc(100vh - 56px);
+  min-height: 0;
 }
 
 .toc-title {
@@ -61,6 +57,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 .result-header {
@@ -113,25 +110,17 @@
 .result-content blockquote { border-left: 3px solid var(--border); padding-left: 16px; color: var(--text-muted); margin: 12px 0; }
 .result-content table { border-collapse: collapse; width: 100%; margin: 12px 0; }
 .result-content th, .result-content td { border: 1px solid var(--border); padding: 8px 12px; font-size: 14px; }
-.result-content th { background: var(--background); font-weight: 600; }
-
-.result-footer {
-  padding: 16px 48px;
-  background: var(--card);
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: center;
-  flex-shrink: 0;
-}
+.result-content th { background: var(--border); font-weight: 600; }
 
 .btn-download {
   background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 10px 24px;
-  font-size: 14px;
+  padding: 7px 16px;
+  font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
   transition: background 0.15s;
 }
 

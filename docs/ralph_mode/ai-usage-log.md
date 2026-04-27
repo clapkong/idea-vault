@@ -127,3 +127,32 @@
   - 각 mock JSON events에 `model` 필드 추가
   - /analytics 엔드포인트가 agent×model×tokens 단위로 집계
   - Researcher agent는 tokens=0, model="n/a" 처리
+
+---
+
+## Loop 5
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- PRD Viewer: TOC 스크롤 고정 재수정 — sticky 방식 제거, flex `min-height: 0` 방식으로 교체 + App.jsx main에 `minHeight: 0, overflow: hidden` 추가
+- History: 좌측 사이드바 고정, 우측 채팅만 스크롤 — 동일한 min-height: 0 방식 적용
+- PRD Viewer: 테이블 헤더 배경색 구분 — `var(--background)` → `var(--border)`
+- PRD Viewer: 다운로드 버튼 헤더로 이동 — footer 제거, 헤더 우측에 'PRD 다운로드' 버튼 배치
+- ChatBubble: 버블 내 MD 헤더(h1/h2/h3) — 글자 크기 유지, bold만 적용 (font-size: inherit)
+- ChatBubble: PRD Writer 버블 → 'IdeaVault가 만들어준 나만의 PRD 보기!' 버튼으로 교체 (jobId prop 추가)
+- Analyze/History: jobId를 ChatBubble에 전달
+- Vite proxy: /analytics, /history, /result 직접 접근 시 JSON 반환되는 문제 수정 — bypass 함수로 text/html 요청은 프록시 우회
+
+### 생성/수정된 파일
+- frontend/src/App.jsx
+- frontend/src/pages/Result.jsx
+- frontend/src/pages/Result.css
+- frontend/src/pages/History.jsx
+- frontend/src/pages/History.css
+- frontend/src/pages/Analyze.jsx
+- frontend/src/components/ChatBubble.jsx
+- frontend/src/components/ChatBubble.css
+- frontend/vite.config.js
+
+### TODO
+- (없음 — 이전 TODO인 Token Analytics 백엔드 구조 개편은 계속 유효)

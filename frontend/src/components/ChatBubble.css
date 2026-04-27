@@ -94,7 +94,20 @@
 .bubble-markdown table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; }
 .bubble-markdown th, .bubble-markdown td { border: 1px solid var(--border); padding: 5px 10px; }
 .bubble-markdown th { background: rgba(0,0,0,0.04); font-weight: 600; }
-.bubble-markdown h1, .bubble-markdown h2, .bubble-markdown h3 { margin: 8px 0 4px; font-weight: 700; }
+.bubble-markdown h1, .bubble-markdown h2, .bubble-markdown h3 { margin: 6px 0 2px; font-weight: 700; font-size: inherit; }
+
+.prd-view-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.prd-view-btn:hover { background: var(--secondary); }
 .bubble-markdown blockquote { border-left: 3px solid var(--border); padding-left: 12px; color: var(--text-muted); margin: 6px 0; }
 
 .bubble-loading-content {

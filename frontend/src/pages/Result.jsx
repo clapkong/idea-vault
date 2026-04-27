@@ -68,17 +68,11 @@ export default function Result() {
         <div className="result-header">
           <button className="btn-back" onClick={() => navigate(-1)}>← 뒤로가기</button>
           <h2 className="result-title">PRD 뷰어</h2>
-          <div style={{ width: 80 }} />
+          <button className="btn-download" onClick={handleDownload}>PRD 다운로드</button>
         </div>
 
         <div className="result-content" ref={contentRef}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{prd}</ReactMarkdown>
-        </div>
-
-        <div className="result-footer">
-          <button className="btn-download" onClick={handleDownload}>
-            IdeaVault가 만들어준 나만의 PRD 다운로드 하기!
-          </button>
         </div>
       </div>
     </div>

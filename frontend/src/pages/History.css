@@ -1,8 +1,8 @@
 .history-page {
   flex: 1;
   display: flex;
-  height: calc(100vh - 56px);
   overflow: hidden;
+  min-height: 0;
 }
 
 .history-sidebar {
@@ -13,6 +13,8 @@
   flex-direction: column;
   background: var(--card);
   overflow: hidden;
+  min-height: 0;
+  flex-shrink: 0;
 }
 
 .sidebar-top {
@@ -197,6 +199,7 @@
   flex-direction: column;
   overflow: hidden;
   background: var(--background);
+  min-height: 0;
 }
 
 .chat-messages-history {
