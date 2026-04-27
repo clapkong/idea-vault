@@ -92,3 +92,38 @@
 - frontend/package.json
 
 <promise>FRONTEND_COMPLETE</promise>
+
+---
+
+## Loop 4
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- Analyze: ctrl+s 등 키보드 단축키로 세션 종료되는 현상 방지 (keydown 이벤트 차단)
+- ChatBubble: Researcher tokens=0 미표시 버그 수정 (`typeof tokens === 'number'` 조건)
+- ChatBubble: 버블 내 텍스트 클리핑 방지 (overflow-wrap: break-word)
+- ChatBubble: 버블 가로 길이 70% → 88%
+- ChatBubble: 에이전트 버블에 ReactMarkdown + remark-gfm 렌더링 적용
+- PRD Viewer: remark-gfm 설치 및 적용으로 테이블 깨짐 수정
+- PRD Viewer: TOC가 콘텐츠와 함께 스크롤되는 오류 수정 (position: sticky)
+- PRD Writer: 뒤로가기 버튼 두 줄로 깨지는 현상 수정 (min-width, white-space: nowrap)
+- History: ❤️/🤍 이모티콘 → SVG 하트 아이콘으로 교체
+- History: 즐겨찾기만 보기 필터 버튼 구현 (favOnly 상태)
+- Home: 예시 Chip을 전체 텍스트에서 이모티콘+키워드 형태로 개선
+
+### 생성/수정된 파일
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/Home.jsx
+- frontend/src/pages/History.jsx
+- frontend/src/pages/History.css
+- frontend/src/pages/Result.jsx
+- frontend/src/pages/Result.css
+- frontend/src/components/ChatBubble.jsx
+- frontend/src/components/ChatBubble.css
+- frontend/package.json (remark-gfm 추가)
+
+### TODO
+- [ ] Token Analytics: 세션 내 복수 모델/에이전트별 통계 — 백엔드 구조 개편 필요
+  - 각 mock JSON events에 `model` 필드 추가
+  - /analytics 엔드포인트가 agent×model×tokens 단위로 집계
+  - Researcher agent는 tokens=0, model="n/a" 처리
