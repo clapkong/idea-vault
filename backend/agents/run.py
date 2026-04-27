@@ -39,12 +39,10 @@ def main():
 
     # 각 루프의 gate 결정 및 평가 점수 출력
     for entry in result["loop_history"]:
-        score = entry.get("score", {})
-        score_str = f"feasibility={score.get('feasibility', '-')} fit={score.get('fit', '-')} clarity={score.get('clarity', '-')}"
-        print(f"  loop {entry['loop']} | gate_decision: {entry.get('gate_decision', '-')} | {score_str}")
-        topic = entry.get("topic", "")
-        if topic:
-            print(f"    topic: {topic[:80]}")
+        critics = entry.get("critics", [])
+        last_score = critics[-1].get("score", {}) if critics else {}
+        score_str = f"feasibility={last_score.get('feasibility', '-')} fit={last_score.get('fit', '-')} clarity={last_score.get('clarity', '-')}"
+        print(f"  loop {entry['loop']} | gate: {entry.get('gate_decision', '-')} | {score_str}")
 
     # 최종 PRD 앞부분 미리보기
     print("\n── PRD (first 800 chars) ──")

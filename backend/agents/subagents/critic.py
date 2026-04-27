@@ -9,10 +9,10 @@ Critic Agent
 """
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from backend.config import MODEL_STRONG
-from backend.agents.llm import load_prompt, create_llm, extract_content
+from config import MODEL_STRONG
+from agents.llm import load_prompt, create_llm, extract_content, extract_tokens
 
-_llm = create_llm(MODEL_STRONG, max_tokens=2048)
+_llm = create_llm(MODEL_STRONG, max_tokens=2048, agent_name="critic")
 _prompt = load_prompt("critic")
 
 
@@ -32,4 +32,4 @@ async def critic_agent(
         f"## 이전 루프 Critics 결과 (있을 경우)\n{previous_findings}"
     )
     result = await _llm.ainvoke([SystemMessage(_prompt), HumanMessage(user_message)])
-    return extract_content(result)
+    return extract_content(result), extract_tokens(result)

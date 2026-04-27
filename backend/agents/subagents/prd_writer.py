@@ -6,10 +6,10 @@ PRD Writer Agent
 """
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from backend.config import MODEL_STRONG
-from backend.agents.llm import load_prompt, create_llm, extract_content
+from config import MODEL_STRONG
+from agents.llm import load_prompt, create_llm, extract_content, extract_tokens
 
-_llm = create_llm(MODEL_STRONG, max_tokens=4096)
+_llm = create_llm(MODEL_STRONG, max_tokens=4096, agent_name="prd_writer")
 _prompt = load_prompt("prd_writer")
 
 
@@ -20,4 +20,4 @@ async def prd_writer_agent(user_conditions: str, final_loop: str) -> str:
         f"## 최종 검증 결과\n{final_loop}"
     )
     result = await _llm.ainvoke([SystemMessage(_prompt), HumanMessage(user_message)])
-    return extract_content(result)
+    return extract_content(result), extract_tokens(result)

@@ -2,75 +2,49 @@
 Orchestrator — deepagents LLM agent that reads orchestrator.md and calls tools.
 Pattern mirrors the user's create_deep_agent + @tool structure.
 """
+import asyncio
 import json
-import logging
 import uuid
+from datetime import datetime
 
 from deepagents import create_deep_agent
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 
-from backend.config import LOGS_DIR, MAX_OUTER_LOOPS, MAX_INNER_LOOPS, MODEL_STRONG, OPENROUTER_API_KEY, OPENROUTER_BASE_URL, PROMPTS_DIR
-from backend.agents.llm import set_token_logger
-
-from backend.agents.subagents.planner import planner_agent
-from backend.agents.subagents.researcher import researcher_agent
-from backend.agents.subagents.analyst import analyst_agent
-from backend.agents.subagents.critic import critic_agent
-from backend.agents.subagents.gate import gate_agent
-from backend.agents.subagents.prd_writer import prd_writer_agent
+from config import (
+    MAX_OUTER_LOOPS, MAX_INNER_LOOPS,
+    MODEL_STRONG, MODEL_LIGHT,
+    OPENROUTER_API_KEY, OPENROUTER_BASE_URL,
+    PROMPTS_DIR,
+)
+from agents.llm import log_line, log_block
+from agents.subagents.planner import planner_agent
+from agents.subagents.researcher import researcher_agent
+from agents.subagents.analyst import analyst_agent
+from agents.subagents.critic import critic_agent
+from agents.subagents.gate import gate_agent
+from agents.subagents.prd_writer import prd_writer_agent
 
 
 # ── Module state (initialized fresh in each run()) ───────────────────────────
 # run() 호출마다 초기화되는 전역 상태 (멀티 run 지원을 위해 run() 시작 시 리셋)
-_logger: logging.Logger | None = None
-_user_conditions: str = "" # 사용자 입력 조건
-_loop_history: list = [] # 루프별 결과 누적
-_prd_result: str = "" # 최종 PRD 텍스트
-_outer: int = 1 # 외부 루프 카운터 (Gate)
-_inner: int = 0 # 내부 루프 카운터 (Critic)
-_current_topic: str = "" # 현재 진행 중인 주제
+_event_queue: asyncio.Queue | None = None  # SSE 브릿지 (None이면 CLI 모드)
+_events: list = []                         # 전체 이벤트 수집 (run() 반환용)
+_user_conditions: str = ""                 # 사용자 입력 조건
+_loop_history: list = []                   # 루프별 결과 누적
+_prd_result: str = ""                      # 최종 PRD 텍스트
+_outer: int = 0                            # 외부 루프 카운터 (Gate)
+_inner: int = 0                            # 내부 루프 카운터 (Critic)
+_current_topic: str = ""                   # 현재 진행 중인 주제
 
 
-# ── Logger setup ──────────────────────────────────────────────────────────────
+# ── Event emission ────────────────────────────────────────────────────────────
 
-# job_id별 로그 파일 + 콘솔 핸들러를 붙인 logger 생성
-def _setup_logger(job_id: str) -> logging.Logger:
-    LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = LOGS_DIR / f"run_{job_id}.log"
-
-    logger = logging.getLogger(f"ideavault.{job_id}")
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False # 상위 루트 logger로 전파 방지
-
-    fmt = logging.Formatter("%(asctime)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
-
-    fh = logging.FileHandler(log_path, encoding="utf-8")
-    fh.setFormatter(fmt)
-    logger.addHandler(fh)
-
-    sh = logging.StreamHandler()
-    sh.setFormatter(fmt)
-    logger.addHandler(sh)
-
-    return logger
-
-
-# ── Logging helpers ───────────────────────────────────────────────────────────
-
-# 에이전트 호출/결과를 한 줄 요약 + 전체 입출력 블록으로 로그에 기록
-def _log_block(agent: str, inputs: dict, result: str) -> None:
-    _logger.info(f"[{agent}] CALL | { {k: str(v)[:120] for k, v in inputs.items()} }")
-    _logger.info(f"[{agent}] DONE | {result[:200].replace(chr(10), ' ')}")
-    inp_block = "\n".join(f"  {k}: {v}" for k, v in inputs.items())
-    _logger.info(
-        f"\n{'─'*60}\n"
-        f"[{agent}]\n\n"
-        f"<입력>\n{inp_block}\n\n"
-        f"<출력>\n{result}\n"
-        f"{'─'*60}"
-    )
+async def _emit(event: dict) -> None:
+    _events.append(event)
+    if _event_queue is not None:
+        await _event_queue.put(event)
 
 
 # ── Tools ─────────────────────────────────────────────────────────────────────
@@ -86,12 +60,15 @@ async def tool_planner(
     """프로젝트 주제 발굴/정제/전환 에이전트.
     mode: INIT(처음 발굴) | REFINE(주제 유지 포인트 수정) | PIVOT(새 주제 발굴)"""
     global _current_topic
+    await _emit({"type": "agent_start", "agent": "planner", "timestamp": datetime.now().strftime("%H:%M:%S")})
+    await _emit({"type": "agent_progress", "agent": "planner"})
     inputs = dict(mode=mode, user_conditions=_user_conditions,
                   current_topic=current_topic, gate_feedback=gate_feedback,
                   rejected_topics=rejected_topics or [])
-    result = await planner_agent(**inputs)
-    _log_block("planner", inputs, result)
+    log_line("[planner] CALL")
+    result, tokens = await planner_agent(**inputs)
     _current_topic = result
+    await _emit({"type": "agent_done", "agent": "planner", "output": result, "tokens": tokens, "model": MODEL_STRONG, "timestamp": datetime.now().strftime("%H:%M:%S")})
     return result
 
 
@@ -100,8 +77,14 @@ async def tool_planner(
 async def tool_researcher(queries: list) -> str:
     """Tavily 외부 검색. LLM 없음.
     Planner EXTERNAL 항목 또는 Critic 보강 방향을 구체적인 검색 쿼리로 변환해서 전달."""
+    await _emit({"type": "agent_start", "agent": "researcher", "timestamp": datetime.now().strftime("%H:%M:%S")})
+    await _emit({"type": "agent_progress", "agent": "researcher"})
+    log_line("[researcher] CALL")
     result = researcher_agent(queries=queries)
-    _log_block("researcher", {"queries": queries}, result)
+    log_line(f"[researcher] DONE | {result[:200]}")
+    log_line()
+    log_block("researcher", "queries:\n" + "\n".join(f"  - {q}" for q in queries), result)
+    await _emit({"type": "agent_done", "agent": "researcher", "output": result, "tokens": 0, "model": None, "timestamp": datetime.now().strftime("%H:%M:%S")})
     return result
 
 
@@ -114,11 +97,14 @@ async def tool_analyst(
 ) -> str:
     """사용자 조건 대비 프로젝트 적합성 분석.
     internal_points: Planner INTERNAL 항목 전체"""
+    await _emit({"type": "agent_start", "agent": "analyst", "timestamp": datetime.now().strftime("%H:%M:%S")})
+    await _emit({"type": "agent_progress", "agent": "analyst"})
     topic_desc = _current_topic.split("EXTERNAL:")[0].strip()
     inputs = dict(internal_points=internal_points, user_conditions=_user_conditions,
                   current_topic=topic_desc, researcher_result=researcher_result, critic_feedback=critic_feedback)
-    result = await analyst_agent(**inputs)
-    _log_block("analyst", inputs, result)
+    log_line("[analyst] CALL")
+    result, tokens = await analyst_agent(**inputs)
+    await _emit({"type": "agent_done", "agent": "analyst", "output": result, "tokens": tokens, "model": MODEL_LIGHT, "timestamp": datetime.now().strftime("%H:%M:%S")})
     return result
 
 
@@ -134,11 +120,14 @@ async def tool_critic(
     방향: RESEARCHER / ANALYST / BOTH / GATE
     점수: feasibility / fit / clarity (0-10)
     previous_findings: tool_get_previous_findings 결과를 그대로 전달"""
+    await _emit({"type": "agent_start", "agent": "critic", "timestamp": datetime.now().strftime("%H:%M:%S")})
+    await _emit({"type": "agent_progress", "agent": "critic"})
     inputs = dict(planner_result=planner_result, researcher_result=researcher_result,
                   analyst_result=analyst_result, user_conditions=_user_conditions,
                   previous_findings=previous_findings)
-    result = await critic_agent(**inputs)
-    _log_block("critic", inputs, result)
+    log_line("[critic] CALL")
+    result, tokens = await critic_agent(**inputs)
+    await _emit({"type": "agent_done", "agent": "critic", "output": result, "tokens": tokens, "model": MODEL_STRONG, "timestamp": datetime.now().strftime("%H:%M:%S")})
     return result
 
 
@@ -148,10 +137,13 @@ async def tool_gate(critic_result: str, gate_decisions: str = "") -> str:
     """주제 계속 여부 심사.
     결정: REFINE(포인트 수정) | PIVOT(주제 전환) | DONE(완료)
     gate_decisions: tool_get_gate_decisions 결과를 그대로 전달"""
+    await _emit({"type": "agent_start", "agent": "gate", "timestamp": datetime.now().strftime("%H:%M:%S")})
+    await _emit({"type": "agent_progress", "agent": "gate"})
     inputs = dict(critic_result=critic_result, user_conditions=_user_conditions,
                   gate_decisions=gate_decisions)
-    result = await gate_agent(**inputs)
-    _log_block("gate", inputs, result)
+    log_line("[gate] CALL")
+    result, tokens = await gate_agent(**inputs)
+    await _emit({"type": "agent_done", "agent": "gate", "output": result, "tokens": tokens, "model": MODEL_LIGHT, "timestamp": datetime.now().strftime("%H:%M:%S")})
     return result
 
 
@@ -160,11 +152,14 @@ async def tool_gate(critic_result: str, gate_decisions: str = "") -> str:
 async def tool_prd_writer() -> str:
     """최종 PRD 작성 (8섹션 마크다운). DONE 결정 후 호출."""
     global _prd_result
+    await _emit({"type": "agent_start", "agent": "prd_writer", "timestamp": datetime.now().strftime("%H:%M:%S")})
+    await _emit({"type": "agent_progress", "agent": "prd_writer"})
+    log_line("[prd_writer] CALL")
     inputs = dict(user_conditions=_user_conditions,
                   final_loop=json.dumps(_loop_history, ensure_ascii=False))
-    result = await prd_writer_agent(**inputs)
-    _log_block("prd_writer", inputs, result)
+    result, tokens = await prd_writer_agent(**inputs)
     _prd_result = result
+    await _emit({"type": "agent_done", "agent": "prd_writer", "output": result, "tokens": tokens, "model": MODEL_STRONG, "timestamp": datetime.now().strftime("%H:%M:%S")})
     return result
 
 
@@ -195,14 +190,14 @@ def tool_update_loop_history(
             "summary": summary,
             "score": score or {},
         })
-        _logger.info(f"[tool_update_loop_history] critic | loop={_outer} inner={_inner}")
+        log_line(f"[tool_update_loop_history] critic | loop={_outer} inner={_inner}")
         return f"Critic 기록 완료. 루프 {_outer}, inner {_inner}"
 
     # gate 모드: 결정 저장 후 outer 증가·inner 리셋
     elif mode == "gate":
         entry["gate_decision"] = gate_decision
-        _logger.info(f"[tool_update_loop_history] gate | loop={_outer} decision={gate_decision}")
         msg = f"Gate 기록 완료. 루프 {_outer}, decision={gate_decision}. 누적 loops: {len(_loop_history)}"
+        log_line(f"[tool_update_loop_history] gate | loop={_outer} decision={gate_decision}")
         _outer += 1
         _inner = 0
         return msg
@@ -214,7 +209,6 @@ def tool_update_loop_history(
 @tool
 def tool_get_current_state() -> str:
     """현재 루프 진행 상태 반환. 언제든 호출 가능."""
-    from backend.config import MAX_OUTER_LOOPS, MAX_INNER_LOOPS
     last_decision = ""
     if _loop_history:
         last_decision = _loop_history[-1].get("gate_decision") or "-"
@@ -273,22 +267,26 @@ def check_loop_limit() -> str:
     global _inner
 
     if _outer >= MAX_OUTER_LOOPS:
-        _logger.info(f"[check_loop_limit] FORCE_PRD | outer={_outer} inner={_inner}")
+        log_line(f"[check_loop_limit] outer={_outer} inner={_inner} → FORCE_PRD")
         return "FORCE_PRD"
 
     if _inner >= MAX_INNER_LOOPS:
+        log_line(f"[check_loop_limit] outer={_outer} inner={_inner} → FORCE_GATE")
         _inner = 0
-        _logger.info(f"[check_loop_limit] FORCE_GATE | outer={_outer} inner={_inner}")
         return "FORCE_GATE"
 
-    _logger.info(f"[check_loop_limit] CONTINUE | outer={_outer} inner={_inner}")
+    log_line(f"[check_loop_limit] outer={_outer} inner={_inner} → CONTINUE")
     return "CONTINUE"
 
 
 # ── Main entry point ──────────────────────────────────────────────────────────
 
-# IdeaVault 전체 파이프라인 실행 진입점 — job별 logger 생성 후 orchestrator agent 호출
-async def run(user_conditions: str, job_id: str | None = None) -> dict:
+# IdeaVault 전체 파이프라인 실행 진입점 — event_queue가 있으면 SSE 브릿지, 없으면 CLI 모드
+async def run(
+    user_conditions: str,
+    job_id: str | None = None,
+    event_queue: asyncio.Queue | None = None,
+) -> dict:
     """
     Run the full IdeaVault pipeline.
 
@@ -296,20 +294,17 @@ async def run(user_conditions: str, job_id: str | None = None) -> dict:
         {
           "job_id": str,
           "prd": str,
-          "loop_history": list[dict]
+          "loop_history": list[dict],
+          "events": list[dict],
         }
     """
-    global _logger, _user_conditions, _loop_history, _prd_result, _outer, _inner, _current_topic
+    global _event_queue, _events, _user_conditions, _loop_history, _prd_result, _outer, _inner, _current_topic
 
-    # job_id 미전달 시 랜덤 8자리 생성
     if not job_id:
         job_id = uuid.uuid4().hex[:8]
 
-    # logger 초기화 — 파일 + 콘솔, job별 격리
-    _logger = _setup_logger(job_id)
-    set_token_logger(_logger)
-
-    # 전역 상태 초기화 (이전 run 잔여값 제거)
+    _event_queue = event_queue
+    _events = []
     _user_conditions = user_conditions
     _loop_history = []
     _prd_result = ""
@@ -317,16 +312,14 @@ async def run(user_conditions: str, job_id: str | None = None) -> dict:
     _inner = 0
     _current_topic = ""
 
-    _logger.info(f"[orchestrator] START | job_id={job_id}")
+    log_line(f"[orchestrator] START | job_id={job_id}")
 
-    # orchestrator.md 로드 후 사용자 조건 주입
     system_prompt = (
         (PROMPTS_DIR / "orchestrator.md")
         .read_text(encoding="utf-8")
         .replace("{user_conditions}", user_conditions)
     )
 
-    # LLM 인스턴스 + deep agent 생성 후 파이프라인 실행
     llm = ChatOpenAI(
         model=MODEL_STRONG,
         api_key=OPENROUTER_API_KEY,
@@ -353,5 +346,9 @@ async def run(user_conditions: str, job_id: str | None = None) -> dict:
     )
     await orchestrator.ainvoke({"messages": [HumanMessage(user_conditions)]})
 
-    _logger.info(f"[orchestrator] END | prd_length={len(_prd_result)} loops={len(_loop_history)}")
-    return {"job_id": job_id, "prd": _prd_result, "loop_history": _loop_history}
+    return {
+        "job_id": job_id,
+        "prd": _prd_result,
+        "loop_history": _loop_history,
+        "events": _events,
+    }
