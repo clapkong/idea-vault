@@ -4,17 +4,15 @@ Pattern mirrors the user's create_deep_agent + @tool structure.
 """
 import json
 import logging
-import re
 import uuid
-from typing import Callable
 
 from deepagents import create_deep_agent
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 
-from backend.config import LOGS_DIR, MODEL_STRONG, OPENROUTER_API_KEY, OPENROUTER_BASE_URL, PROMPTS_DIR
-from backend.agents.llm import set_usage_callback
+from backend.config import LOGS_DIR, MAX_OUTER_LOOPS, MAX_INNER_LOOPS, MODEL_STRONG, OPENROUTER_API_KEY, OPENROUTER_BASE_URL, PROMPTS_DIR
+from backend.agents.llm import set_token_logger
 
 from backend.agents.subagents.planner import planner_agent
 from backend.agents.subagents.researcher import researcher_agent
@@ -22,7 +20,6 @@ from backend.agents.subagents.analyst import analyst_agent
 from backend.agents.subagents.critic import critic_agent
 from backend.agents.subagents.gate import gate_agent
 from backend.agents.subagents.prd_writer import prd_writer_agent
-from backend.agents.utils import check_loop_limit as _check_limit_fn
 
 
 # ── Module state (initialized fresh in each run()) ───────────────────────────
@@ -33,7 +30,6 @@ _loop_history: list = [] # 루프별 결과 누적
 _prd_result: str = "" # 최종 PRD 텍스트
 _outer: int = 1 # 외부 루프 카운터 (Gate)
 _inner: int = 0 # 내부 루프 카운터 (Critic)
-_last_critic_result: str = "" # FORCE_GATE 시 재사용할 마지막 Critic 결과
 _current_topic: str = "" # 현재 진행 중인 주제
 
 
@@ -61,29 +57,19 @@ def _setup_logger(job_id: str) -> logging.Logger:
     return logger
 
 
-# ── Wrapped tool call with logging ────────────────────────────────────────────
+# ── Logging helpers ───────────────────────────────────────────────────────────
 
-def _call(logger: logging.Logger, agent: str, fn: Callable, **kwargs) -> str:
-    # 에이전트 호출을 래핑해 입출력 로깅 및 에러 처리를 일원화
-    logger.info(f"[{agent}] CALL | { {k: str(v)[:120] for k, v in kwargs.items()} }")
-    try:
-        result: str = fn(**kwargs)
-    except Exception as exc:
-        logger.error(f"[{agent}] ERROR | {type(exc).__name__}: {exc}")
-        raise
-
-    logger.info(f"[{agent}] DONE | {str(result)[:200].replace(chr(10), ' ')}")
-
-    inp_block = "\n".join(f"  {k}: {v}" for k, v in kwargs.items())
-    logger.info(
+def _log_block(agent: str, inputs: dict, result: str) -> None:
+    _logger.info(f"[{agent}] CALL | { {k: str(v)[:120] for k, v in inputs.items()} }")
+    _logger.info(f"[{agent}] DONE | {result[:200].replace(chr(10), ' ')}")
+    inp_block = "\n".join(f"  {k}: {v}" for k, v in inputs.items())
+    _logger.info(
         f"\n{'─'*60}\n"
         f"[{agent}]\n\n"
         f"<입력>\n{inp_block}\n\n"
         f"<출력>\n{result}\n"
         f"{'─'*60}"
     )
-
-    return result
 
 
 # ── Tools ─────────────────────────────────────────────────────────────────────
@@ -98,12 +84,11 @@ async def tool_planner(
     """프로젝트 주제 발굴/정제/전환 에이전트.
     mode: INIT(처음 발굴) | REFINE(주제 유지 포인트 수정) | PIVOT(새 주제 발굴)"""
     global _current_topic
-    result = _call(_logger, "planner", planner_agent,
-                   mode=mode,
-                   user_conditions=_user_conditions,
-                   current_topic=current_topic,
-                   gate_feedback=gate_feedback,
-                   rejected_topics=rejected_topics or [])
+    inputs = dict(mode=mode, user_conditions=_user_conditions,
+                  current_topic=current_topic, gate_feedback=gate_feedback,
+                  rejected_topics=rejected_topics or [])
+    result = await planner_agent(**inputs)
+    _log_block("planner", inputs, result)
     _current_topic = result
     return result
 
@@ -112,7 +97,9 @@ async def tool_planner(
 async def tool_researcher(queries: list) -> str:
     """Tavily 외부 검색. LLM 없음.
     Planner EXTERNAL 항목 또는 Critic 보강 방향을 구체적인 검색 쿼리로 변환해서 전달."""
-    return _call(_logger, "researcher", researcher_agent, queries=queries)
+    result = researcher_agent(queries=queries)
+    _log_block("researcher", {"queries": queries}, result)
+    return result
 
 
 @tool
@@ -123,11 +110,12 @@ async def tool_analyst(
 ) -> str:
     """사용자 조건 대비 프로젝트 적합성 분석.
     internal_points: Planner INTERNAL 항목 전체"""
-    return _call(_logger, "analyst", analyst_agent,
-                 internal_points=internal_points,
-                 user_conditions=_user_conditions,
-                 researcher_result=researcher_result,
-                 critic_feedback=critic_feedback)
+    topic_desc = _current_topic.split("EXTERNAL:")[0].strip()
+    inputs = dict(internal_points=internal_points, user_conditions=_user_conditions,
+                  current_topic=topic_desc, researcher_result=researcher_result, critic_feedback=critic_feedback)
+    result = await analyst_agent(**inputs)
+    _log_block("analyst", inputs, result)
+    return result
 
 
 @tool
@@ -141,14 +129,11 @@ async def tool_critic(
     방향: RESEARCHER / ANALYST / BOTH / GATE
     점수: feasibility / fit / clarity (0-10)
     previous_findings: tool_get_previous_findings 결과를 그대로 전달"""
-    global _last_critic_result
-    result = _call(_logger, "critic", critic_agent,
-                   planner_result=planner_result,
-                   researcher_result=researcher_result,
-                   analyst_result=analyst_result,
-                   user_conditions=_user_conditions,
-                   previous_findings=previous_findings)
-    _last_critic_result = result
+    inputs = dict(planner_result=planner_result, researcher_result=researcher_result,
+                  analyst_result=analyst_result, user_conditions=_user_conditions,
+                  previous_findings=previous_findings)
+    result = await critic_agent(**inputs)
+    _log_block("critic", inputs, result)
     return result
 
 
@@ -157,19 +142,21 @@ async def tool_gate(critic_result: str, gate_decisions: str = "") -> str:
     """주제 계속 여부 심사.
     결정: REFINE(포인트 수정) | PIVOT(주제 전환) | DONE(완료)
     gate_decisions: tool_get_gate_decisions 결과를 그대로 전달"""
-    return _call(_logger, "gate", gate_agent,
-                 critic_result=critic_result,
-                 user_conditions=_user_conditions,
-                 gate_decisions=gate_decisions)
+    inputs = dict(critic_result=critic_result, user_conditions=_user_conditions,
+                  gate_decisions=gate_decisions)
+    result = await gate_agent(**inputs)
+    _log_block("gate", inputs, result)
+    return result
 
 
 @tool
 async def tool_prd_writer() -> str:
     """최종 PRD 작성 (8섹션 마크다운). DONE 결정 후 호출."""
     global _prd_result
-    result = _call(_logger, "prd_writer", prd_writer_agent,
-                   user_conditions=_user_conditions,
-                   final_loop=json.dumps(_loop_history, ensure_ascii=False))
+    inputs = dict(user_conditions=_user_conditions,
+                  final_loop=json.dumps(_loop_history, ensure_ascii=False))
+    result = await prd_writer_agent(**inputs)
+    _log_block("prd_writer", inputs, result)
     _prd_result = result
     return result
 
@@ -269,18 +256,16 @@ def check_loop_limit() -> str:
     반환: CONTINUE / FORCE_GATE / FORCE_PRD"""
     global _inner
 
-    status = _check_limit_fn(_outer, _inner)
-    _logger.info(f"[check_loop_limit] outer={_outer} inner={_inner} → {status}")
-
-    if status == "FORCE_GATE":
-        _inner = 0
-        _logger.info("[check_loop_limit] FORCE_GATE")
-        return "FORCE_GATE"
-
-    if status == "FORCE_PRD":
-        _logger.info("[check_loop_limit] FORCE_PRD")
+    if _outer >= MAX_OUTER_LOOPS:
+        _logger.info(f"[check_loop_limit] FORCE_PRD | outer={_outer} inner={_inner}")
         return "FORCE_PRD"
 
+    if _inner >= MAX_INNER_LOOPS:
+        _inner = 0
+        _logger.info(f"[check_loop_limit] FORCE_GATE | outer={_outer} inner={_inner}")
+        return "FORCE_GATE"
+
+    _logger.info(f"[check_loop_limit] CONTINUE | outer={_outer} inner={_inner}")
     return "CONTINUE"
 
 
@@ -297,7 +282,7 @@ async def run(user_conditions: str, job_id: str | None = None) -> dict:
           "loop_history": list[dict]
         }
     """
-    global _logger, _user_conditions, _loop_history, _prd_result, _outer, _inner, _last_critic_result, _current_topic
+    global _logger, _user_conditions, _loop_history, _prd_result, _outer, _inner, _current_topic
 
     # job_id 미전달 시 랜덤 8자리 생성
     if not job_id:
@@ -305,21 +290,15 @@ async def run(user_conditions: str, job_id: str | None = None) -> dict:
 
     # 전역 상태 초기화 (이전 run 잔여값 제거)
     _logger = _setup_logger(job_id)
+    set_token_logger(_logger)
     _user_conditions = user_conditions
     _loop_history = []
     _prd_result = ""
     _outer = 0
     _inner = 0
-    _last_critic_result = ""
     _current_topic = ""
 
     _logger.info(f"[orchestrator] START | job_id={job_id}")
-
-    # 토큰 사용량을 로그 파일에 기록하는 콜백 등록
-    set_usage_callback(
-        lambda model, prompt, completion, total:
-            _logger.info(f"[tokens] {model} | prompt={prompt} completion={completion} total={total}")
-    )
 
     # orchestrator.md 프롬프트에 사용자 조건 주입
     system_prompt = (

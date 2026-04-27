@@ -1,47 +1,53 @@
-"""
-Shared LLM client — OpenRouter (OpenAI-compatible API).
-All agents import call_llm() from here instead of touching SDK directly.
-"""
-from typing import Callable
+import logging
 
-from openai import OpenAI
+from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.outputs import LLMResult
+from langchain_openai import ChatOpenAI
 
 from backend.config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL, PROMPTS_DIR
 
-_client: OpenAI | None = None # OpenAI API 클라이언트
-_usage_callback: Callable | None = None  # 토큰 사용량 추적 콜백
 
-# 최초 호출 시에 클라이언트 생성, 이후 재사용
-def _get_client() -> OpenAI:
-    global _client # 전역변수
-    if _client is None:
-        _client = OpenAI(
-            api_key=OPENROUTER_API_KEY,
-            base_url=OPENROUTER_BASE_URL,
-        )
-    return _client
+_token_logger: logging.Logger | None = None
 
-# 토큰 사용량 콜백 등록 (None 전달 시 비활성화)
-def set_usage_callback(cb: Callable | None) -> None:
-    global _usage_callback # 현재 기준 토큰 사용량 로깅만 해주는 함수
-    _usage_callback = cb
 
-# prompts/{agent_name}.md 파일을 읽어 subagent 프롬프트 반환
+class _TokenHandler(BaseCallbackHandler):
+    def on_llm_end(self, response: LLMResult, **kwargs) -> None:
+        if _token_logger is None:
+            return
+        usage = (response.llm_output or {}).get("token_usage", {})
+        if usage:
+            _token_logger.info(
+                f"[token] prompt={usage.get('prompt_tokens', 0)} "
+                f"completion={usage.get('completion_tokens', 0)} "
+                f"total={usage.get('total_tokens', 0)}"
+            )
+
+
+_handler = _TokenHandler()
+
+
+def set_token_logger(logger: logging.Logger) -> None:
+    global _token_logger
+    _token_logger = logger
+
+
 def load_prompt(agent_name: str) -> str:
     return (PROMPTS_DIR / f"{agent_name}.md").read_text(encoding="utf-8")
 
-# subagent 호출용 공통 함수
-def call_llm(model: str, prompt: str, max_tokens: int = 1024) -> str:
-    # 클라이언트 객체 생성/불러오기 + OpenAI.chat.completions()
-    response = _get_client().chat.completions.create(
+
+def create_llm(model: str, max_tokens: int = 1024) -> ChatOpenAI:
+    return ChatOpenAI(
         model=model,
+        api_key=OPENROUTER_API_KEY,
+        base_url=OPENROUTER_BASE_URL,
         max_tokens=max_tokens,
-        messages=[{"role": "user", "content": prompt}],
+        callbacks=[_handler],
     )
-    # 토큰 로깅 함수로 토큰 사용량 로깅
-    if _usage_callback and response.usage:
-        u = response.usage
-        _usage_callback(model, u.prompt_tokens, u.completion_tokens, u.total_tokens)
-    
-    # 모델 response 돌려주기
-    return response.choices[0].message.content or ""
+
+
+def extract_content(result) -> str:
+    # subagent는 create_deep_agent 대신 ChatOpenAI 직접 호출 — 선택 파라미터 빈 값 시 빈 출력 문제 확인
+    content = result.content
+    if isinstance(content, list):
+        return "\n".join(b["text"] for b in content if isinstance(b, dict) and b.get("type") == "text")
+    return content
