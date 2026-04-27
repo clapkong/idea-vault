@@ -186,3 +186,27 @@
 
 ### TODO
 - (없음)
+
+---
+
+## Loop 7
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- index.css: `html/body height: 100% + overflow: hidden` 추가 → 페이지 레벨 스크롤 완전 차단 (PRD Viewer TOC 고정, History 스크롤 분리 근본 원인 수정)
+- History.jsx: `buildChatFromResult`에서 prd_writer 마지막 항목만 유지 → "IdeaVault가 만들어준 나만의 PRD 보기!" 중복 표시 버그 수정
+- Analyze.jsx: `done` 이벤트 시 `setTimeout navigate` 제거 → PRD 완성 후 자동이동 제거, 버튼 클릭으로만 이동
+- Analyze.jsx: `useNavigate` import 및 선언 제거, 상태 메시지 수정 ("결과 페이지로 이동합니다..." 제거)
+- Analyze.css: `chat-messages` padding `48px → 10%` → 채팅 영역 좌우 10% 여백, 80% 폭 제한
+- ChatBubble.css: `bubble-wrapper` max-width `65% → 80%`
+- ChatBubble.css: `.user-row` `flex-direction: row-reverse` → `justify-content: flex-end` → user 아바타 우측 고정
+
+### 생성/수정된 파일
+- frontend/src/index.css
+- frontend/src/components/ChatBubble.css
+- frontend/src/pages/Analyze.css
+- frontend/src/pages/Analyze.jsx
+- frontend/src/pages/History.jsx
+
+### TODO
+- (없음)
