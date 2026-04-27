@@ -14,6 +14,7 @@ _llm = create_llm(MODEL_LIGHT, max_tokens=1536)
 _prompt = load_prompt("analyst")
 
 
+# planner INTERNAL 항목을 사용자 조건에 대입해 프로젝트 적합성 판단
 async def analyst_agent(
     internal_points: str,
     user_conditions: str,
@@ -22,8 +23,11 @@ async def analyst_agent(
     critic_feedback: str = "없음",
 ) -> str:
     parts = [f"## 사용자 조건\n{user_conditions}"]
+
+    # current_topic이 있을 때만 포함 — 첫 병렬 호출 시에도 planner 완료 후 주입됨
     if current_topic:
         parts.append(f"## 현재 주제\n{current_topic}")
+
     parts += [
         f"## 분석 포인트\n{internal_points}",
         f"## Researcher 결과 (선택)\n{researcher_result}",

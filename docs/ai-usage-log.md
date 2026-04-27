@@ -188,3 +188,32 @@ backend/
 - "create_deep_agent 미들웨어 문제로 빈 출력 발생 확인. analyst, critic 등 단순 텍스트 입출력 서브에이전트를 create_llm().ainvoke() 방식으로 교체해줘. analyst에 current_topic도 주입해줘."
 - "analyst한테 넣어주는 planner 결과는 TOPIC과 DESCRIPTION만 전달하자."
 - "create_deep_agent 코드 흔적 지우고, llm.py에 한 줄로 이유만 남겨줘."
+
+---
+
+## 2026-04-27 — orchestrator 주석 추가 및 researcher async 버그 수정
+
+**작업 내용**
+
+`researcher.py` 버그 수정
+- `async def researcher_agent` → `def researcher_agent` (sync 복원)
+- 사유: Tavily 클라이언트가 sync API이고, orchestrator `tool_researcher`에서 `await` 없이 직접 호출 중 — `async def`로 두면 코루틴 객체가 반환되어 결과가 유실됨
+
+`orchestrator.py` 주석 작업
+- 모든 함수/툴 위에 `#` 한 줄 역할 주석 추가 (15개 함수 전체)
+- `@tool` 내부 docstring은 LLM이 tool description으로 읽으므로 수정하지 않음
+- `tool_update_loop_history` 내부 기능 단위 분리
+  - 현재 outer 루프 항목 조회/신규 생성
+  - critic 모드: inner 카운터 증가 후 요약·점수 기록
+  - gate 모드: 결정 저장 후 outer 증가·inner 리셋
+- `run()` 내부 기능 단위 분리
+  - logger 초기화 (파일 + 콘솔, job별 격리) / 전역 상태 초기화를 별도 섹션으로 분리
+  - LLM 인스턴스 생성 + deep agent 생성 + ainvoke 호출을 하나의 섹션으로 통합
+- `_setup_logger` 내부 주석 → 함수 위로 이동 (주석 포맷 일관성 유지)
+
+**수정된 파일**
+- `backend/agents/subagents/researcher.py`
+- `backend/agents/orchestrator.py`
+
+**프롬프트**
+- "orchestrator에 대해서도 함수별, 함수가 수행하는 게 많을 때에는 기능 단위로 내부 나눠서 주석. @tool 내부 docstring은 tool 호출할 때 쓰는 거라 건드리면 안 돼."

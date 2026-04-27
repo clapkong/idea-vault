@@ -13,6 +13,7 @@ _llm = create_llm(MODEL_STRONG, max_tokens=4096)
 _prompt = load_prompt("prd_writer")
 
 
+# 전체 루프 검증 결과를 바탕으로 8섹션 마크다운 PRD 작성
 async def prd_writer_agent(user_conditions: str, final_loop: str) -> str:
     user_message = (
         f"## 사용자 조건\n{user_conditions}\n\n"

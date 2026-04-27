@@ -5,7 +5,8 @@ Researcher Agent  (no LLM — Tavily only)
 """
 from backend.config import TAVILY_API_KEY
 
-# lazy import so missing package gives a clear error at call time
+
+# TavilyClient lazy import — 패키지 미설치 시 호출 시점에 명확한 에러 발생
 def _get_tavily():
     try:
         from tavily import TavilyClient  # type: ignore
@@ -14,8 +15,8 @@ def _get_tavily():
     return TavilyClient(api_key=TAVILY_API_KEY)
 
 
+# 쿼리 목록을 Tavily로 검색, URL을 보존해 하나의 문자열로 반환
 def researcher_agent(queries: list) -> str:
-    """Call Tavily for each query and return concatenated results."""
     if not queries:
         return "검색 쿼리 없음"
 

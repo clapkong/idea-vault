@@ -1,7 +1,8 @@
 """
 Critic Agent
   Input : planner_result (str), researcher_result (str),
-          analyst_result (str), user_conditions (str)
+          analyst_result (str), user_conditions (str),
+          previous_findings (str, optional)
   Output: str  — evaluation text + direction (RESEARCHER/ANALYST/BOTH/GATE)
                  + feasibility/fit/clarity scores
   Model : MODEL_STRONG
@@ -15,6 +16,7 @@ _llm = create_llm(MODEL_STRONG, max_tokens=2048)
 _prompt = load_prompt("critic")
 
 
+# researcher·analyst 결과를 종합해 정보 충분성 평가, 다음 방향 결정
 async def critic_agent(
     planner_result: str,
     researcher_result: str,
