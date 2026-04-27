@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ChatBubble from '../components/ChatBubble'
+import { getHistory, getResult, toggleFavorite, deleteJob } from '../api/client'
 import './History.css'
 
 // 날짜 문자열 → 한국어 형식 변환 (예: 2024. 1. 15.)
@@ -11,24 +12,29 @@ function formatDate(str) {
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+// 실행 시간(초) → 읽기 쉬운 문자열 (예: 2분 34초)
+function formatDuration(sec) {
+  if (!sec) return ''
+  if (sec < 60) return `${Math.round(sec)}초`
+  return `${Math.floor(sec / 60)}분 ${Math.round(sec % 60)}초`
+}
+
 // loop_history 또는 events에서 ChatBubble용 메시지 배열 생성
 function buildChatFromResult(data, inputPreview) {
   const msgs = []
   if (inputPreview) msgs.push({ id: 'user', role: 'user', content: inputPreview })
 
-  const lh = data.loop_history || []
+  const lh = (data.loop_history || []).filter(e => e.agent && e.output)
   if (lh.length > 0) {
     lh.forEach((entry, i) => {
-      if (entry.agent && entry.output) {
-        msgs.push({
-          id: `lh-${i}`,
-          role: 'agent',
-          agent: entry.agent,
-          content: entry.output,
-          timestamp: entry.timestamp,
-          tokens: entry.tokens,
-        })
-      }
+      msgs.push({
+        id: `lh-${i}`,
+        role: 'agent',
+        agent: entry.agent,
+        content: entry.output,
+        timestamp: entry.timestamp,
+        tokens: entry.tokens,
+      })
     })
   } else if (data.events) {
     data.events
@@ -86,8 +92,7 @@ export default function History() {
 
   // 초기 세션 목록 로드 + 첫 항목 자동 선택
   useEffect(() => {
-    fetch('/history')
-      .then(r => r.json())
+    getHistory()
       .then(data => {
         setJobs(data)
         if (data.length > 0) selectJob(data[0].job_id, data[0].input_preview)
@@ -118,8 +123,7 @@ export default function History() {
     setSelectedId(jobId)
     setLoadingChat(true)
     setChatMessages([])
-    fetch(`/result/${jobId}`)
-      .then(r => r.json())
+    getResult(jobId)
       .then(data => {
         setChatMessages(buildChatFromResult(data, inputPreview))
       })
@@ -130,12 +134,7 @@ export default function History() {
   // 즐겨찾기 토글 — e.stopPropagation: 부모 카드의 onClick 전파 차단
   function handleFavorite(e, jobId, current) {
     e.stopPropagation()
-    fetch(`/jobs/${jobId}/favorite`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ favorite: !current }),
-    })
-      .then(r => r.json())
+    toggleFavorite(jobId, !current)
       .then(data => {
         setJobs(prev => prev.map(j => j.job_id === jobId ? { ...j, favorite: data.favorite } : j))
       })
@@ -146,7 +145,7 @@ export default function History() {
   function handleDelete(e, jobId) {
     e.stopPropagation()
     if (!window.confirm('정말 이 항목을 삭제하시겠습니까?')) return
-    fetch(`/jobs/${jobId}`, { method: 'DELETE' })
+    deleteJob(jobId)
       .then(() => {
         setJobs(prev => {
           const next = prev.filter(j => j.job_id !== jobId)
@@ -202,7 +201,10 @@ export default function History() {
                   <HeartIcon filled={job.favorite} />
                 </button>
               </div>
-              <div className="job-card-date">{formatDate(job.created_at)}</div>
+              <div className="job-card-date">
+                {formatDate(job.created_at)}
+                {job.duration_sec > 0 && <span className="job-duration"> · {formatDuration(job.duration_sec)}</span>}
+              </div>
               <div className="job-card-preview">{(job.input_preview || '').slice(0, 100)}</div>
               <div className="job-card-footer">
                 <button

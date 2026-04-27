@@ -1,5 +1,6 @@
 // 토큰 사용량 통계 대시보드 — 기간 필터, 파이·막대 차트, CSV 내보내기
 import { useEffect, useState, useMemo } from 'react'
+import { getAnalytics } from '../api/client'
 import './Analytics.css'
 
 // 기간 필터 탭 레이블 목록
@@ -279,13 +280,9 @@ export default function Analytics() {
   // range 변경 시 analytics API 재호출
   useEffect(() => {
     setLoading(true)
-    const param = RANGE_PARAMS[range]
-    fetch(`/analytics?range=${param}`)
-      .then(r => r.json())
+    getAnalytics(RANGE_PARAMS[range])
       .then(data => {
-        // backend returns {summary, data} or flat array
-        const rows = Array.isArray(data) ? data : (data.data || [])
-        setRows(rows)
+        setRows(Array.isArray(data) ? data : (data.data || []))
       })
       .catch(() => setRows([]))
       .finally(() => setLoading(false))

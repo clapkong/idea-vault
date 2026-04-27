@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useLocation } from 'react-router-dom'
 import ChatBubble from '../components/ChatBubble'
+import { createEventStream, stopJob } from '../api/client'
 import './Analyze.css'
 
 // 분석 페이지 — 에이전트 파이프라인 진행 상황을 채팅 버블로 표시
@@ -27,6 +28,8 @@ export default function Analyze() {
   const agentBubblesRef = useRef({})
   // 첫 SSE 이벤트 수신 여부 — connecting → running 전환 트리거
   const firstEventRef = useRef(false)
+  // done 이벤트 수신 여부 — onerror 클로저에서 정상 종료 여부 판별용
+  const doneRef = useRef(false)
 
   // 브라우저 기본 단축키(ctrl+s 등) 차단 — SSE 수신 중 의도치 않은 페이지 이탈 방지
   useEffect(() => {
@@ -45,7 +48,7 @@ export default function Analyze() {
 
   // EventSource: 서버와 단방향 SSE 연결 — jobId 기반 스트림 구독, 언마운트 시 자동 close
   useEffect(() => {
-    const es = new EventSource(`/stream/${jobId}`)
+    const es = createEventStream(jobId)
     esRef.current = es
 
     es.onmessage = (event) => {
@@ -62,7 +65,9 @@ export default function Analyze() {
     }
 
     es.onerror = () => {
-      if (sessionStatus === 'connecting') {
+      // done 이벤트를 받지 못한 상태에서 연결이 끊기면 error로 처리
+      // sessionStatus는 클로저 초기값('connecting')을 캡처하므로 ref로 판별
+      if (!doneRef.current) {
         setSessionStatus('error')
       }
       es.close()
@@ -100,6 +105,7 @@ export default function Analyze() {
           : m
       ))
     } else if (data.type === 'done') {
+      doneRef.current = true
       setSessionStatus('done')
       if (esRef.current) esRef.current.close()
     }
@@ -113,7 +119,7 @@ export default function Analyze() {
   // 세션 중단 — API 호출 후 SSE 연결 종료
   async function handleStop() {
     try {
-      await fetch(`/jobs/${jobId}/stop`, { method: 'POST' })
+      await stopJob(jobId)
     } catch {
       // ignore
     }

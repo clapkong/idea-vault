@@ -1,6 +1,7 @@
 // 홈 페이지 — 아이디어 입력 폼 + 예시 프롬프트 + /generate 제출
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { generateIdea } from '../api/client'
 import './Home.css'
 
 // 예시 아이디어 목록 (레이블 + 본문)
@@ -42,15 +43,10 @@ export default function Home() {
     setError('')
     setLoading(true)
     try {
-      const res = await fetch('/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_input: text }),
-      })
-      const data = await res.json()
+      const data = await generateIdea(text)
       navigate(`/analyze/${data.job_id}`, { state: { idea: text } })
     } catch (e) {
-      setError('서버에 연결할 수 없습니다. Mock API 서버가 실행 중인지 확인해주세요.')
+      setError('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.')
       setLoading(false)
     }
   }
