@@ -265,3 +265,42 @@
 
 ### TODO
 - `backend/mock_agents/prd_*.md` 4개 파일이 완전히 동일 — 나중에 job별 다른 내용으로 교체 필요
+
+---
+
+## Loop 10
+날짜/시간: 2026-04-27
+
+### 작업 내용
+- `92b2d589.json`: 각 `agent_done` 이벤트에 `model` 필드 추가
+  - `planner`, `analyst`, `critic`, `prd_writer` → `claude-sonnet`
+  - `researcher`, `gate` → `claude-haiku`
+- `history.json`: 모든 항목에 `"deleted": false` 필드 추가 (soft delete 지원)
+- `backend/main.py` 전면 개편
+  - 하드코딩 `ANALYTICS_DATA` 제거 → job JSON 이벤트에서 동적 집계 (model별 토큰 합산)
+  - `DELETE /jobs/{id}`: `deleted: true`를 history.json에 기록 (soft delete, 새로고침 후에도 유지)
+  - `PATCH /jobs/{id}/favorite`: 인메모리 `_favorites` 제거, history.json에 영구 저장
+  - `GET /history`: `deleted: true` 항목 필터링
+  - `load_history()` / `save_history()` 헬퍼 추출
+  - TODO 주석 추가: `/generate` job_id 하드코딩, pandas CSV pipeline, DB 쿼리 전환 지점
+- `Analytics.jsx`
+  - 비용 관련 전부 제거 (summary "총 비용" 카드, 테이블 `비용` 컬럼, CSV 헤더)
+  - "총 요청" → "총 세션" (unique `job_id` 기준 집계)
+  - CSV: `job_id` 컬럼 추가 (pandas join 대비), UTF-8 BOM 적용
+- `Analytics.css`
+  - 테이블/차트 flex 비율 6:4 → 5:4 (컬럼 줄어든 만큼 테이블 축소)
+  - 테이블 셀 padding `10px 14px` → `11px 18px`
+  - summary 카드 padding/min-width 확장 (2개 카드 기준으로 여백 재조정)
+
+### 생성/수정된 파일
+- `backend/main.py`
+- `backend/mock_agents/92b2d589.json`
+- `backend/mock_agents/history.json`
+- `frontend/src/pages/Analytics.jsx`
+- `frontend/src/pages/Analytics.css`
+
+### TODO
+- `History.jsx` 검색/정렬/즐겨찾기 필터 아직 프론트에서 처리 → 백엔드 쿼리 파라미터(`?search=`, `?sort=`, `?favorite=`)로 이전 필요
+- `/generate` job_id 하드코딩 (`"92b2d589"`) — 실제 구현 시 UUID 생성 + DB 저장으로 교체
+- Analytics pandas + CSV pipeline 전환 예정 (TODO 주석으로 지점 표시됨)
+- `backend/mock_agents/prd_*.md` 4개 파일이 완전히 동일 — 나중에 job별 다른 내용으로 교체 필요

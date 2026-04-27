@@ -193,8 +193,8 @@ export default function Analytics() {
 
   const summary = useMemo(() => {
     const totalTokens = rows.reduce((s, r) => s + (r.tokens || 0), 0)
-    const totalCost = rows.reduce((s, r) => s + (r.cost || 0), 0)
-    return { count: rows.length, tokens: totalTokens, cost: totalCost }
+    const uniqueJobs = new Set(rows.map(r => r.job_id)).size
+    return { count: uniqueJobs, tokens: totalTokens }
   }, [rows])
 
   const modelChartData = useMemo(() => {
@@ -219,12 +219,13 @@ export default function Analytics() {
   }, [rows])
 
   function handleCSV() {
-    const header = ['날짜', '제목', '모델', '토큰', '비용']
+    // TODO(backend): serve this CSV directly from FastAPI via pandas for server-side aggregation.
+    const header = ['날짜', 'job_id', '제목', '모델', '토큰']
     const csvRows = rows.map(r => [
-      r.date || '', r.title || '', r.model || '', r.tokens || 0, r.cost || 0
+      r.date || '', r.job_id || '', r.title || '', r.model || '', r.tokens || 0
     ])
     const csv = [header, ...csvRows].map(r => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -250,16 +251,12 @@ export default function Analytics() {
         </div>
         <div className="summary-cards">
           <div className="summary-card">
-            <span className="summary-label">총 요청</span>
+            <span className="summary-label">총 세션</span>
             <span className="summary-value">{summary.count}개</span>
           </div>
           <div className="summary-card">
             <span className="summary-label">총 토큰</span>
             <span className="summary-value">{summary.tokens.toLocaleString()}</span>
-          </div>
-          <div className="summary-card">
-            <span className="summary-label">총 비용</span>
-            <span className="summary-value">${summary.cost.toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -277,12 +274,11 @@ export default function Analytics() {
                     <th>제목</th>
                     <th>모델</th>
                     <th>토큰</th>
-                    <th>비용</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 && (
-                    <tr><td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>데이터 없음</td></tr>
+                    <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>데이터 없음</td></tr>
                   )}
                   {rows.map((r, i) => (
                     <tr key={i}>
@@ -290,7 +286,6 @@ export default function Analytics() {
                       <td className="title-cell">{r.title || '-'}</td>
                       <td>{r.model || '-'}</td>
                       <td>{(r.tokens || 0).toLocaleString()}</td>
-                      <td>${(r.cost || 0).toFixed(4)}</td>
                     </tr>
                   ))}
                 </tbody>
