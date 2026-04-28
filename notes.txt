@@ -1,16 +1,11 @@
 [TODO 목록]
 [TODO] Dockerfile 작성 — 프로젝트를 컨테이너로 실행 가능
-[TODO] 보안 점검: 의존성에 알려진 취약점이 없는지 확인 (pip audit 또는 유사 도구)
+[TODO] AI log 정리
+[완료] 보안 점검: 의존성에 알려진 취약점이 없는지 확인 (pip audit 또는 유사 도구)
+[TODO] Merge to Develop
 [TODO] GitHub CI/CD 
+[TODO] FORCE PRD가 critics 바로 다음에 실행되는 문제 (42378efb) -> 아주 나중에 (GitHub CI/CD)
 
-TODO: FORCE PRD가 critics 바로 다음에 실행되는 문제 (42378efb) -> 아주 나중에 (GitHub CI/CD)
-
-[완료] mock 모드 fixtures -> 기존데이터 저장한 폴더로 통일  
-[완료] tokens 표시: total input: | output: 
-[완료] README.md에 venv 설치하는거부터. pip install이 필요하지 않는가. 근데 지금 requirements.txt가 저기에 있는게 맞나? react 관련도 저기 들어있는 것 같은데. 분리해야하나? 하나의 venv로 실행하는게 맞나..? 
-[완료] health check - request 
-[완료] history에 시간 안 뜸
-[완료] 프론트에 약간의 오류 - profile picture이랑 subagent랑 제대로 매치가 안되는 오류 (정확히는 analyst가 critic 프로필이 뜨는게 끝인거 같기도 하고)
-[완료]: 주석 + 코드 이해 
-[완료]: subagent1 - orchestrator - subagent2 사이 orchestrator가 subagent 1 결과를 보고 subagent2를 호출하려고 할 때 사이의 갭이 멈춘건가 꽤 길게 느껴짐. 
-AI 에이전트 어쩌구... 하고 뜨잖아. 그냥 대기중 버블 뜨기 전에도 세션이 살아있다 여부만 어떻게든 나타네고 싶은데 어려울가? 
+사용한 오픈소스
+pip install fastapi "uvicorn[standard]" sse-starlette langchain-core langchain-openai python-dotenv pan
+das requests deepagents tavily-python
