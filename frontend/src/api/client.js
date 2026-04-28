@@ -9,7 +9,10 @@ export async function generateIdea(userInput) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_input: userInput }),
   })
-  if (!res.ok) throw new Error('서버 오류가 발생했습니다.')
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.detail || '서버 오류가 발생했습니다.')
+  }
   return res.json()
 }
 
@@ -33,10 +36,13 @@ export async function getResult(jobId) {
   return res.json()
 }
 
-// GET /history → Job[]
+// GET /history?search=...&sort=newest|oldest&favorite=true → Job[]
 // deleted=true 항목은 서버에서 이미 제외된 상태로 반환
-export async function getHistory() {
-  const res = await fetch('/history')
+export async function getHistory({ search = '', sort = 'newest', favorite } = {}) {
+  const params = new URLSearchParams({ sort })
+  if (search) params.set('search', search)
+  if (favorite !== undefined) params.set('favorite', String(favorite))
+  const res = await fetch(`/history?${params}`)
   if (!res.ok) throw new Error('히스토리를 불러올 수 없습니다.')
   return res.json()
 }
@@ -58,6 +64,14 @@ export async function toggleFavorite(jobId, favorite) {
 export async function deleteJob(jobId) {
   const res = await fetch(`/jobs/${jobId}`, { method: 'DELETE' })
   if (!res.ok) throw new Error('삭제에 실패했습니다.')
+  return res.json()
+}
+
+// GET /ready → { openrouter: "ok"/"degraded", tavily: "ok"/"degraded" }
+// 외부 서비스 접속 가능 여부 확인 — 홈 진입 시 호출
+export async function getReady() {
+  const res = await fetch('/ready')
+  if (!res.ok) throw new Error('연결 상태를 확인할 수 없습니다.')
   return res.json()
 }
 

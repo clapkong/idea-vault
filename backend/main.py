@@ -2,6 +2,8 @@
 # USE_MOCK_MODE 분기는 여기서 한 번만 수행 — real mode가 기본 경로
 from pathlib import Path
 
+import os
+
 import requests
 from dotenv import load_dotenv
 
@@ -24,19 +26,33 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 이 서버가 살아있는지 확인
 @app.get("/health")
 def health():
+    return {"status": "ok", "mock_mode": USE_MOCK_MODE}
+
+
+# AI 모델(OpenRouter)과 검색(Tavily) 서버가 지금 접속 가능한지 확인
+@app.get("/ready")
+def ready():
+    api_key = os.getenv("OPENROUTER_API_KEY", "")
     try:
-        r = requests.get("https://openrouter.ai/api/v1/models", timeout=3)
+        r = requests.get(
+            "https://openrouter.ai/api/v1/models",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=3,
+        )
         openrouter_status = "ok" if r.status_code == 200 else "degraded"
     except Exception:
-        openrouter_status = "unreachable"
+        openrouter_status = "degraded"
 
-    return {
-        "status": "ok",
-        "openrouter": openrouter_status,
-        "mock_mode": USE_MOCK_MODE,
-    }
+    try:
+        requests.get("https://tavily.com", timeout=3)
+        tavily_status = "ok"
+    except Exception:
+        tavily_status = "degraded"
+
+    return {"openrouter": openrouter_status, "tavily": tavily_status}
 
 
 # Agent 사용 모드
