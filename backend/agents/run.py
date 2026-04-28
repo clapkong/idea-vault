@@ -8,6 +8,7 @@ from pathlib import Path
 from .orchestrator import run
 
 
+# CLI 진입점 — 인자 파싱 후 orchestrator.run() 호출, 결과 콘솔 출력 + PRD 파일 저장
 def main():
     # CLI 인자가 있으면 그대로 사용, 없으면 빈 줄 입력까지 대화형으로 수집
     if len(sys.argv) > 1:

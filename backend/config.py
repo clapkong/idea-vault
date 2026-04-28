@@ -1,3 +1,4 @@
+# 환경변수 로딩 + 필수값 검증 — .env 기반, 누락 시 즉시 EnvironmentError
 import os
 from pathlib import Path
 

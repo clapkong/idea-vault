@@ -392,3 +392,142 @@ run.log 로그 포맷 복원과 mock 모드 아키텍처 전면 교체.
 **프롬프트**
 (1) run.log에서 에이전트별 CALL/DONE/START 타임스탬프 줄과 token 로그의 에이전트 태그가 사라진 문제 복원. llm.py에 log_line/log_block 인프라 추가 후 orchestrator.py 각 tool에 로그 삽입.
 (2) mock 모드를 fixtures/ 기반에서 data/jobs/ 실제 완료 job 재생 방식으로 전환. generate는 새 job_id 생성, stream은 에이전트별 딜레이 하드코딩 재생, 나머지 엔드포인트는 real storage 위임.
+
+---
+
+## 2026-04-28 — 프론트 → 백엔드 로직 이전 및 UX 개선
+
+**작업 내용**
+
+프론트엔드에 박혀 있던 비즈니스 로직을 백엔드로 이전하고, 에이전트 간 갭 구간 UX 개선.
+
+**오케스트레이터 갭 인디케이터 (Analyze.jsx)**
+- 추가: `isOrchestratorThinking` 파생 상태 — `sessionStatus === 'running'` 이고 `loading: true`인 버블이 없는 구간 감지
+- 추가: `.orchestrator-thinking` + `.thinking-dot` CSS — 점 3개 순차 페이드 애니메이션. `agent_done` → `agent_start` 사이 빈 구간에 자동 표시/소멸
+
+**CSV 내보내기 → 백엔드 전환 (analytics.py, Analytics.jsx)**
+- 추가: `GET /analytics/csv?range=...` — 기존 `analytics()` 재호출 후 pandas `df.to_csv(encoding='utf-8-sig')`로 파일 생성, `StreamingResponse` 반환. BOM·쌍따옴표 이스케이프 자동 처리
+- 수정: `Analytics.jsx` `handleCSV()` 13줄 → `window.location.href = /analytics/csv?range=...` 1줄
+
+**히스토리 필터·정렬 → 백엔드 전환 (history.py, mock.py, client.js, History.jsx)**
+- 수정: `GET /history?search=&sort=newest|oldest&favorite=true` — search(제목·입력 부분일치), sort(newest 기본, oldest는 reversed), favorite(bool 파라미터) 서버사이드 처리
+- 수정: `mock.py GET /history` 동일 파라미터 대응
+- 수정: `client.js getHistory()` — `{ search, sort, favorite }` 파라미터를 URLSearchParams로 전달
+- 제거: `History.jsx` `filtered` state + 필터 `useEffect` (14줄)
+- 추가: `History.jsx` 검색어 300ms 디바운스(`debouncedSearch` state) — 키 입력마다 API 요청 방지
+- 수정: `History.jsx` `handleFavorite` — `favOnly=true` 상태에서 즐겨찾기 해제 시 로컬 state에서 즉시 제거
+
+**analytics summary 중복 집계 제거 (Analytics.jsx)**
+- 제거: `summary` useMemo (rows를 프론트에서 재집계)
+- 추가: `summary` state — API 응답의 `data.summary` 그대로 사용 (`total_jobs` → `count`, `total_tokens` → `tokens`)
+
+**PRD 다운로드 → 백엔드 전환 (jobs.py, mock.py, Result.jsx)**
+- 추가: `GET /result/{job_id}/prd.md` — 서버의 `data/jobs/{job_id}/prd.md`를 `FileResponse`로 직접 서빙. `filename=prd_{job_id}.md` 헤더 포함
+- 수정: `mock.py` 동일 엔드포인트 추가
+- 수정: `Result.jsx` `handleDownload()` 8줄 → `window.location.href = /result/{job_id}/prd.md` 1줄
+
+**Analytics 차트 집계 → 백엔드 pandas (analytics.py, Analytics.jsx)**
+- 추가: `_compute_model_aggregates(df)` — 모델별 토큰 합계 계산
+- 추가: `_compute_date_aggregates(df)` — 날짜·모델별 세그먼트 (스택 바 차트용)
+- 수정: `/analytics` 응답에 `modelAggregates`, `dateAggregates` 필드 추가
+- 제거: `Analytics.jsx` `modelChartData`, `dateChartData` useMemo 2개 (총 28줄)
+- 추가: `Analytics.jsx` state로 `modelChartData`, `dateChartData` 저장, API 응답에서 직접 할당
+- 제거: `useMemo` import (더 이상 필요 없음)
+
+**preflight_check — 외부 서비스 연결 검증 (generate.py, client.js, Home.jsx)**
+- 추가: `backend/routers/generate.py` — `preflight_check()` async 함수
+  - TAVILY_API_KEY 미설정 시 HTTPException(503, detail="TAVILY_API_KEY가 설정되지 않았습니다...")
+  - OpenRouter `/models` GET 요청 (Bearer auth) — status != 200 or network fail 시 HTTPException(503)
+  - `asyncio.to_thread`로 blocking `requests` 호출을 event loop 밖에서 실행
+- 수정: `POST /generate` 진입 직후 `await preflight_check()` 호출
+- 수정: `client.js` `generateIdea()` — error JSON body 파싱해서 `detail` 필드 추출 후 throw
+- 수정: `Home.jsx` catch에서 `e.message` 직접 사용 (generic "서버 연결 불가" 대신 실제 오류 메시지)
+
+**수정된 파일**
+- `frontend/src/pages/Analyze.jsx`
+- `frontend/src/pages/Analyze.css`
+- `backend/routers/analytics.py`
+- `frontend/src/pages/Analytics.jsx`
+- `backend/routers/history.py`
+- `backend/routers/mock.py`
+- `frontend/src/api/client.js`
+- `frontend/src/pages/History.jsx`
+- `backend/routers/jobs.py`
+- `frontend/src/pages/Result.jsx`
+- `backend/routers/generate.py`
+- `frontend/src/pages/Home.jsx`
+
+**프롬프트**
+(1) agent_done → agent_start 사이 갭 구간에 세션 활성 표시: 로딩 버블 없는 running 상태를 감지해 점 3개 인디케이터 표시.
+(2) CSV 내보내기를 백엔드 pandas로 전환: GET /analytics/csv 엔드포인트 추가, 프론트 Blob 조립 제거.
+(3) 히스토리 검색·정렬·즐겨찾기 필터를 GET /history 쿼리 파라미터로 이전: 프론트 filter useEffect 제거, 디바운스 추가.
+(4) analytics summary를 API 응답값 직접 사용: 프론트 useMemo 재집계 제거.
+(5) PRD 다운로드를 백엔드 FileResponse로 전환: GET /result/{job_id}/prd.md 추가, 프론트 Blob 조립 제거.
+(6) Analytics 차트 집계(모델별·날짜별)를 백엔드 pandas로 전환: 프론트 useMemo 제거, API 응답에서 직접 받음.
+(7) POST /generate에 외부 서비스 연결 검증 추가: TAVILY, OpenRouter 둘 중 하나라도 실패 시 503 반환. 프론트에서 error detail 파싱해 사용자 친화적 메시지 표시.
+
+---
+
+## 2026-04-28 — 파이프라인 에러 처리 강화 및 서비스 상태 확인 개선
+
+**작업 내용**
+
+실 실행 중 발견된 버그 수정, 에러 가시성 개선, preflight 구조 재설계.
+
+**done 이벤트 status 필드 추가 (pipeline.py, mock.py, Analyze.jsx)**
+- 수정: `pipeline.py` — `_final_status` 변수로 성공(done)/중단(stopped)/실패(failed) 추적. `done` 이벤트에 `status` 필드 포함
+- 수정: `mock.py` — `done` 이벤트에 `status: "done"` 추가 (real 모드와 통일)
+- 수정: `Analyze.jsx` — `done` 이벤트의 `status` 값으로 sessionStatus 분기. failed → `'error'`(세션이 에러로 인해 종료), stopped → `'stopped'`(사용자 요청으로 종료), done → `'done'`. 기존에는 파이프라인 실패 시에도 "PRD가 완성되었습니다!" 표시됨
+
+**파이프라인 에러 가시성 (pipeline.py)**
+- 추가: `except Exception` 블록에 `logging.exception("[pipeline] job=%s failed", job_id)` — 파이프라인 실패 시 uvicorn 콘솔에 full traceback 출력. 기존에는 에러가 조용히 삼켜져 meta.json에만 기록됨
+
+**compute_cost model=None 버그 수정 (pipeline.py)**
+- 수정: `event.get("model", "")` → `event.get("model") or ""` — researcher는 LLM 없이 Tavily 검색만 수행해 model 필드가 None으로 기록됨. `get("model", "")` 은 키가 있고 값이 None이면 None을 그대로 반환해 `.lower()` 호출 시 AttributeError 발생
+
+**analytics 필터 완화 (analytics.py)**
+- 수정: `status == "done"` 필터 제거 → `result.json` 존재 여부로 대체. compute_cost 실패로 status가 "failed"로 기록됐어도 result.json이 완전한 job을 analytics에서 제외하던 문제 수정
+- 추가: `result.json` 파싱 시 `try/except` — 파일 손상 시 해당 job만 스킵. `if not model_tokens: continue` (기존)와 함께 3중 방어
+
+**tokens 필드 이중 포맷 주석 추가 (pipeline.py, analytics.py, ChatBubble.jsx)**
+- 추가: 구버전(정수) / 신버전({input, output, total} 딕셔너리) 처리 분기마다 주석. orchestrator 개편 전 저장된 job과 이후 job의 포맷이 달라 방어 코드가 필요한 이유 명시
+- 추가: researcher model=None 처리 이유 주석 (analytics.py, pipeline.py)
+
+**mock duration_sec 처리 (mock.py)**
+- 수정: `_replay()` — source `result.json`에 `duration_sec`가 있으면 사용, 없으면 재생 실제 경과 시간으로 대체. 구버전 result.json에는 duration_sec 필드 없음
+
+**preflight_check 제거 + GET /ready 추가 (generate.py, main.py, client.js, Home.jsx, Home.css)**
+- 제거: `generate.py` — `preflight_check()` 함수 및 `POST /generate` 호출부, 관련 import(requests, OPENROUTER_API_KEY 등) 제거. OpenRouter `/models` 200 응답이 실제 inference 성공을 보장하지 않아 safeguard로서 의미 없음
+- 수정: `GET /health` — 서버 생존 여부만 반환, OpenRouter 체크 제거. 주석 "이 서버가 살아있는지 확인" 추가
+- 추가: `GET /ready` — OpenRouter(Bearer auth 포함) + Tavily 접속 가능 여부 확인. `{ openrouter: "ok"/"degraded", tavily: "ok"/"degraded" }` 반환
+- 추가: `client.js` — `getReady()` 함수
+- 수정: `Home.jsx` — 진입 시 `getReady()` 호출, 하나라도 degraded면 경고 배너 표시. 정상이면 배너 미표시
+- 추가: `Home.css` — `.service-warning` 스타일 (amber 계열, 기존 warm brown 팔레트)
+
+**날짜별 막대 차트 모델 합산 수정 (analytics.py)**
+- 수정: `_compute_date_aggregates()` — 같은 날짜에 여러 job이 있을 때 모델별로 합산하지 않고 row를 그대로 segments로 넘기던 버그 수정. 동일 모델 색이 job 수만큼 반복되어 줄무늬처럼 보이는 시각적 오류 발생. `groupby("model")["tokens"].sum()` 으로 날짜 내 모델별 토큰 합산
+
+**수정된 파일**
+- `backend/services/pipeline.py`
+- `backend/routers/mock.py`
+- `backend/routers/analytics.py`
+- `backend/routers/generate.py`
+- `backend/main.py`
+- `frontend/src/pages/Analyze.jsx`
+- `frontend/src/components/ChatBubble.jsx`
+- `frontend/src/api/client.js`
+- `frontend/src/pages/Home.jsx`
+- `frontend/src/pages/Home.css`
+
+**발견된 문제점**
+- `preflight_check`가 OpenRouter `/models` 200을 기준으로 통과 판정했으나, 실제 completions 호출은 별도 인증 검증으로 401 "User not found" 반환 가능. safeguard가 오히려 false confidence를 줌
+- `compute_cost`에서 `model=None`(researcher emit)으로 `.lower()` AttributeError 발생 — PRD까지 생성된 후 비용 계산 단계에서 터져 result.json은 있지만 meta.json이 failed로 기록되는 상황 발생
+- analytics `status == "done"` 필터가 위 상황의 job을 집계에서 제외함
+
+**프롬프트**
+(1) 파이프라인 실패 시에도 "PRD가 완성되었습니다!" 표시되는 문제: done 이벤트에 status 필드 추가, Analyze.jsx에서 분기.
+(2) 파이프라인 에러가 조용히 삼켜지는 문제: logging.exception으로 uvicorn 콘솔에 traceback 출력.
+(3) compute_cost model=None AttributeError: `or ""` 가드 추가.
+(4) analytics가 result.json 있는 job을 status==failed로 제외하는 문제: result.json 존재 여부 기준으로 전환, JSON 파싱 방어 추가.
+(5) preflight_check 제거: /ready 엔드포인트로 대체, 홈 진입 시 서비스 상태 배너 표시.
+(6) 날짜별 막대 차트 줄무늬 버그: _compute_date_aggregates에서 모델별 groupby 합산.

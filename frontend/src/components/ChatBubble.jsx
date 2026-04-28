@@ -131,6 +131,7 @@ export default function ChatBubble({ message, jobId }) {
           <div className="bubble-meta">
             {timestamp && <span>{formatTime(timestamp)}</span>}
             {tokens != null && (
+              // tokens 필드 구버전: 숫자, 신버전: { input, output, total } 객체
               typeof tokens === 'object'
                 ? <span>{tokens.total.toLocaleString()} tokens (in {tokens.input.toLocaleString()} | out {tokens.output.toLocaleString()})</span>
                 : <span>{tokens.toLocaleString()} tokens</span>

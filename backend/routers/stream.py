@@ -21,6 +21,7 @@ async def _event_stream(queue: asyncio.Queue) -> AsyncGenerator[str, None]:
 
 
 @router.get("/stream/{job_id}")
+# job_id에 해당하는 큐를 조회해 SSE 스트림 응답 반환
 async def stream(job_id: str):
     queue = job_queues.get(job_id)
     if queue is None:

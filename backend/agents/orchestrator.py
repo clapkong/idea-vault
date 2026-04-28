@@ -41,6 +41,7 @@ _current_topic: str = ""                   # 현재 진행 중인 주제
 
 # ── Event emission ────────────────────────────────────────────────────────────
 
+# SSE 이벤트 큐 + 내부 수집 리스트에 동시 추가
 async def _emit(event: dict) -> None:
     _events.append(event)
     if _event_queue is not None:

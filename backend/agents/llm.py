@@ -1,3 +1,4 @@
+# LLM 공통 유틸 — ChatOpenAI 팩토리, 프롬프트 로더, 콜백 핸들러, run.log 로거 주입
 import contextvars
 import logging
 from datetime import datetime
@@ -20,6 +21,7 @@ _block_logger_ctx: contextvars.ContextVar[logging.Logger | None] = contextvars.C
 _SEP = "─" * 60
 
 
+# run.log 타임스탬프 포맷
 def _ts() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -47,6 +49,7 @@ def log_block(agent_name: str, input_text: str, output_text: str) -> None:
     logger.info(block)
 
 
+# LangChain 콜백 핸들러 — LLM 호출마다 토큰 카운트·입출력 블록을 run.log에 기록
 class _TokenHandler(BaseCallbackHandler):
     def __init__(self, model: str, agent_name: str = ""):
         self.model = model
@@ -54,6 +57,7 @@ class _TokenHandler(BaseCallbackHandler):
         # run_id → HumanMessage 내용 임시 저장 (on_chat_model_start → on_llm_end 구간)
         self._pending: dict[str, str] = {}
 
+    # LLM 호출 직전 — HumanMessage 내용을 run_id 키로 임시 저장
     def on_chat_model_start(self, serialized, messages, **kwargs) -> None:
         if _block_logger_ctx.get() is None or not self.agent_name:
             return
@@ -65,6 +69,7 @@ class _TokenHandler(BaseCallbackHandler):
                     human_content = msg.content
         self._pending[run_id] = human_content
 
+    # LLM 응답 수신 후 — 토큰 카운트 + 입출력 블록 run.log 기록
     def on_llm_end(self, response: LLMResult, **kwargs) -> None:
         ts = _ts()
         usage = (response.llm_output or {}).get("token_usage", {})
@@ -101,6 +106,7 @@ class _TokenHandler(BaseCallbackHandler):
             )
             block_logger.info(block)
 
+    # LLM 오류 시 pending 입력 제거
     def on_llm_error(self, error, **kwargs) -> None:
         run_id = str(kwargs.get("run_id", ""))
         self._pending.pop(run_id, None)

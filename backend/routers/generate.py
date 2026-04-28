@@ -1,5 +1,6 @@
 # POST /generate — 아이디어 분석 요청 접수 (real mode)
 import asyncio
+import logging
 from datetime import datetime
 from uuid import uuid4
 
@@ -10,6 +11,7 @@ from services.pipeline import job_queues, run_pipeline, running_jobs
 from services.storage import DATA_DIR, write_meta
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class GenerateRequest(BaseModel):
@@ -17,6 +19,7 @@ class GenerateRequest(BaseModel):
 
 
 @router.post("/generate")
+# 새 job 생성, 파이프라인을 백그라운드 task로 실행 후 job_id 즉시 반환
 async def generate(body: GenerateRequest):
     # hex[:8]: 8자리 축약 UUID — URL 노출용, 가독성 우선
     job_id = uuid4().hex[:8]
