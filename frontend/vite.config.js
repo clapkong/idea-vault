@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 function bypassNav(req) {
-  if (req.headers.accept?.includes('text/html')) return req.url
+  if (req.headers.accept?.includes('text/html') && !req.url.endsWith('.md')) return req.url
 }
 
 export default defineConfig({
