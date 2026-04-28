@@ -3,7 +3,7 @@ Researcher Agent  (no LLM — Tavily only)
   Input : queries (list[str])
   Output: str  — aggregated search results with URLs preserved
 """
-from backend.config import TAVILY_API_KEY
+from config import TAVILY_API_KEY
 
 
 # TavilyClient lazy import — 패키지 미설치 시 호출 시점에 명확한 에러 발생

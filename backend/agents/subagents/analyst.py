@@ -7,10 +7,10 @@ Analyst Agent
 """
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from backend.config import MODEL_LIGHT
-from backend.agents.llm import load_prompt, create_llm, extract_content
+from config import MODEL_LIGHT
+from agents.llm import load_prompt, create_llm, extract_content, extract_tokens
 
-_llm = create_llm(MODEL_LIGHT, max_tokens=1536)
+_llm = create_llm(MODEL_LIGHT, max_tokens=1536, agent_name="analyst")
 _prompt = load_prompt("analyst")
 
 
@@ -35,4 +35,4 @@ async def analyst_agent(
     ]
     user_message = "\n\n".join(parts)
     result = await _llm.ainvoke([SystemMessage(_prompt), HumanMessage(user_message)])
-    return extract_content(result)
+    return extract_content(result), extract_tokens(result)

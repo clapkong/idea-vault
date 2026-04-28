@@ -18,18 +18,15 @@ const AGENT_LABELS = {
 
 // 에이전트별 진행 중·완료 안내 메시지
 const AGENT_MESSAGES = {
-  planner: { progress: '주제를 발굴하고 있습니다...', done: '주제 발굴을 완료했습니다! 결과를 보여드릴게요.' },
-  researcher: { progress: '관련 자료를 검색하고 있습니다...', done: '자료 검색을 완료했습니다! 결과를 보여드릴게요.' },
-  critic: { progress: '추가로 필요한 정보를 확인하고 있습니다...', done: '추가 정보 확인을 완료했습니다!' },
-  gate: { progress: '프로젝트 검증 중입니다...', done: '검증을 완료했습니다!' },
-  analyst: { progress: '프로젝트 정보를 분석하고 있습니다...', done: '분석을 완료했습니다! 내부 검토 사항을 확인했어요.' },
+  planner: { progress: '아이디어를 발굴하고 방향을 기획하고 있습니다...', done: '기획이 완료되었습니다! 결과를 확인해보세요.'},
+  researcher: { progress: '관련 자료를 검색하고 있습니다...', done: '조사가 완료되었습니다! 수집한 정보를 확인해보세요.' },
+  analyst: { progress: '적합성을 분석하고 있습니다...', done: '분석이 완료되었습니다! 분석 결과를 확인해보세요.' },
+  critic: { progress: '아이디어의 실현 가능성과 완성도를 검증하고 있습니다...', done: '검증이 완료되었습니다! 검증 결과를 확인해보세요.' },
+  gate: { progress: '아이디어를 더 발전시킬지 판단하고 있습니다...', done: '판단이 완료되었습니다.' },
   prd_writer: { progress: '최종 PRD를 작성하고 있습니다...', done: 'PRD 작성이 완료되었습니다!' },
 }
 
-// 아이콘 파일명 예외 매핑 (analyst는 critic 이미지 공유)
-const AGENT_ICON_MAP = {
-  analyst: 'critic',
-}
+const AGENT_ICON_MAP = {}
 
 // 에이전트별 버블 레이블 색상
 const AGENT_COLORS = {
@@ -129,11 +126,16 @@ export default function ChatBubble({ message, jobId }) {
             </div>
           )}
         </div>
-        {/* 시간·토큰 메타 정보 — typeof 체크: tokens가 0일 때도 표시 */}
-        {!isUser && (timestamp || typeof tokens === 'number') && (
+        {/* 시간·토큰 메타 정보 */}
+        {!isUser && (timestamp || tokens != null) && (
           <div className="bubble-meta">
             {timestamp && <span>{formatTime(timestamp)}</span>}
-            {typeof tokens === 'number' && <span>{tokens.toLocaleString()} tokens</span>}
+            {tokens != null && (
+              // tokens 필드 구버전: 숫자, 신버전: { input, output, total } 객체
+              typeof tokens === 'object'
+                ? <span>{tokens.total.toLocaleString()} tokens (in {tokens.input.toLocaleString()} | out {tokens.output.toLocaleString()})</span>
+                : <span>{tokens.toLocaleString()} tokens</span>
+            )}
           </div>
         )}
       </div>

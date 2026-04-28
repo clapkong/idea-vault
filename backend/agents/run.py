@@ -1,10 +1,14 @@
+# 에이전트 파이프라인 CLI 실행 진입점
+# 실행: backend/ 디렉토리에서 python -m agents.run "아이디어 텍스트"
+# (-m 없이 python agents/run.py 로 실행하면 상대 import 오류 발생)
 import asyncio
 import sys
 from pathlib import Path
 
-from backend.agents.orchestrator import run
+from .orchestrator import run
 
 
+# CLI 진입점 — 인자 파싱 후 orchestrator.run() 호출, 결과 콘솔 출력 + PRD 파일 저장
 def main():
     # CLI 인자가 있으면 그대로 사용, 없으면 빈 줄 입력까지 대화형으로 수집
     if len(sys.argv) > 1:
@@ -36,12 +40,10 @@ def main():
 
     # 각 루프의 gate 결정 및 평가 점수 출력
     for entry in result["loop_history"]:
-        score = entry.get("score", {})
-        score_str = f"feasibility={score.get('feasibility', '-')} fit={score.get('fit', '-')} clarity={score.get('clarity', '-')}"
-        print(f"  loop {entry['loop']} | gate_decision: {entry.get('gate_decision', '-')} | {score_str}")
-        topic = entry.get("topic", "")
-        if topic:
-            print(f"    topic: {topic[:80]}")
+        critics = entry.get("critics", [])
+        last_score = critics[-1].get("score", {}) if critics else {}
+        score_str = f"feasibility={last_score.get('feasibility', '-')} fit={last_score.get('fit', '-')} clarity={last_score.get('clarity', '-')}"
+        print(f"  loop {entry['loop']} | gate: {entry.get('gate_decision', '-')} | {score_str}")
 
     # 최종 PRD 앞부분 미리보기
     print("\n── PRD (first 800 chars) ──")
@@ -49,7 +51,7 @@ def main():
     print("...")
 
     # 전체 PRD를 logs/ 디렉터리에 마크다운 파일로 저장
-    logs_dir = Path(__file__).parent / "docs" / "generated_prds"
+    logs_dir = Path(__file__).parent.parent.parent / "docs" / "generated_prds"
     logs_dir.mkdir(parents=True, exist_ok=True)
     out_path = logs_dir / f"prd_{result['job_id']}.md"
     out_path.write_text(result["prd"], encoding="utf-8")

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ChatBubble from '../components/ChatBubble'
+import { getHistory, getResult, toggleFavorite, deleteJob } from '../api/client'
 import './History.css'
 
 // 날짜 문자열 → 한국어 형식 변환 (예: 2024. 1. 15.)
@@ -11,24 +12,29 @@ function formatDate(str) {
   return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+// 실행 시간(초) → 읽기 쉬운 문자열 (예: 2분 34초)
+function formatDuration(sec) {
+  if (!sec) return ''
+  if (sec < 60) return `${Math.round(sec)}초`
+  return `${Math.floor(sec / 60)}분 ${Math.round(sec % 60)}초`
+}
+
 // loop_history 또는 events에서 ChatBubble용 메시지 배열 생성
 function buildChatFromResult(data, inputPreview) {
   const msgs = []
   if (inputPreview) msgs.push({ id: 'user', role: 'user', content: inputPreview })
 
-  const lh = data.loop_history || []
+  const lh = (data.loop_history || []).filter(e => e.agent && e.output)
   if (lh.length > 0) {
     lh.forEach((entry, i) => {
-      if (entry.agent && entry.output) {
-        msgs.push({
-          id: `lh-${i}`,
-          role: 'agent',
-          agent: entry.agent,
-          content: entry.output,
-          timestamp: entry.timestamp,
-          tokens: entry.tokens,
-        })
-      }
+      msgs.push({
+        id: `lh-${i}`,
+        role: 'agent',
+        agent: entry.agent,
+        content: entry.output,
+        timestamp: entry.timestamp,
+        tokens: entry.tokens,
+      })
     })
   } else if (data.events) {
     data.events
@@ -63,10 +69,8 @@ function HeartIcon({ filled }) {
 
 // 히스토리 메인 컴포넌트
 export default function History() {
-  // 전체 세션 목록 (API 원본)
+  // 서버에서 필터·정렬된 세션 목록
   const [jobs, setJobs] = useState([])
-  // 필터·정렬 적용된 목록
-  const [filtered, setFiltered] = useState([])
   // 검색어
   const [search, setSearch] = useState('')
   // 정렬 기준 ('newest' | 'oldest')
@@ -84,29 +88,26 @@ export default function History() {
   // 자동 스크롤 대상 DOM 노드
   const chatEndRef = useRef(null)
 
-  // 초기 세션 목록 로드 + 첫 항목 자동 선택
+  // 검색어 디바운스 — 키 입력마다 API 요청 방지
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   useEffect(() => {
-    fetch('/history')
-      .then(r => r.json())
+    const t = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // 필터 변경 시 서버에서 재조회 + 초기 첫 항목 자동 선택
+  const hasAutoSelected = useRef(false)
+  useEffect(() => {
+    getHistory({ search: debouncedSearch, sort, favorite: favOnly || undefined })
       .then(data => {
         setJobs(data)
-        if (data.length > 0) selectJob(data[0].job_id, data[0].input_preview)
+        if (!hasAutoSelected.current && data.length > 0) {
+          hasAutoSelected.current = true
+          selectJob(data[0].job_id, data[0].input_preview)
+        }
       })
       .catch(() => {})
-  }, [])
-
-  // 검색어·정렬·즐겨찾기 필터 적용
-  useEffect(() => {
-    let result = jobs.filter(j => {
-      const q = search.toLowerCase()
-      const matchSearch = (j.title || '').toLowerCase().includes(q) ||
-        (j.input_preview || '').toLowerCase().includes(q)
-      return matchSearch && (!favOnly || j.favorite)
-    })
-    if (sort === 'newest') result = [...result].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    else result = [...result].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-    setFiltered(result)
-  }, [jobs, search, sort, favOnly])
+  }, [debouncedSearch, sort, favOnly])
 
   // 채팅 메시지 추가 시 맨 아래로 자동 스크롤
   useEffect(() => {
@@ -118,8 +119,7 @@ export default function History() {
     setSelectedId(jobId)
     setLoadingChat(true)
     setChatMessages([])
-    fetch(`/result/${jobId}`)
-      .then(r => r.json())
+    getResult(jobId)
       .then(data => {
         setChatMessages(buildChatFromResult(data, inputPreview))
       })
@@ -130,14 +130,13 @@ export default function History() {
   // 즐겨찾기 토글 — e.stopPropagation: 부모 카드의 onClick 전파 차단
   function handleFavorite(e, jobId, current) {
     e.stopPropagation()
-    fetch(`/jobs/${jobId}/favorite`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ favorite: !current }),
-    })
-      .then(r => r.json())
+    toggleFavorite(jobId, !current)
       .then(data => {
-        setJobs(prev => prev.map(j => j.job_id === jobId ? { ...j, favorite: data.favorite } : j))
+        setJobs(prev => {
+          const updated = prev.map(j => j.job_id === jobId ? { ...j, favorite: data.favorite } : j)
+          // 즐겨찾기만 보기 상태에서 해제하면 목록에서 즉시 제거
+          return favOnly ? updated.filter(j => j.favorite) : updated
+        })
       })
       .catch(() => {})
   }
@@ -146,7 +145,7 @@ export default function History() {
   function handleDelete(e, jobId) {
     e.stopPropagation()
     if (!window.confirm('정말 이 항목을 삭제하시겠습니까?')) return
-    fetch(`/jobs/${jobId}`, { method: 'DELETE' })
+    deleteJob(jobId)
       .then(() => {
         setJobs(prev => {
           const next = prev.filter(j => j.job_id !== jobId)
@@ -184,9 +183,9 @@ export default function History() {
         </div>
         <div className="job-list">
           {/* 빈 목록 안내 */}
-          {filtered.length === 0 && <p className="empty-list">항목이 없습니다.</p>}
+          {jobs.length === 0 && <p className="empty-list">항목이 없습니다.</p>}
           {/* 세션 카드 목록 */}
-          {filtered.map(job => (
+          {jobs.map(job => (
             <div
               key={job.job_id}
               className={`job-card ${selectedId === job.job_id ? 'selected' : ''}`}
@@ -202,7 +201,10 @@ export default function History() {
                   <HeartIcon filled={job.favorite} />
                 </button>
               </div>
-              <div className="job-card-date">{formatDate(job.created_at)}</div>
+              <div className="job-card-date">
+                {formatDate(job.created_at)}
+                {job.duration_sec > 0 && <span className="job-duration"> · {formatDuration(job.duration_sec)}</span>}
+              </div>
               <div className="job-card-preview">{(job.input_preview || '').slice(0, 100)}</div>
               <div className="job-card-footer">
                 <button

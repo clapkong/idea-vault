@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { getResult } from '../api/client'
 import './Result.css'
 
 // Markdown에서 ## 헤딩만 추출 (사이드 TOC용, 최대 8개)
@@ -26,16 +27,23 @@ export default function Result() {
   // Markdown 렌더링 영역 DOM 노드 — TOC 클릭 시 h2 탐색용
   const contentRef = useRef(null)
 
-  // jobId 기반 PRD 데이터 로드
+  // jobId 기반 PRD 데이터 로드 — 파이프라인 완료 전 요청 시 404가 올 수 있으므로 재시도
   useEffect(() => {
-    fetch(`/result/${jobId}`)
-      .then(r => r.json())
-      .then(data => {
-        const md = data.prd || ''
-        setPrd(md)
-        setSections(extractH2Sections(md))
-      })
-      .catch(() => {})
+    let cancelled = false
+    function attempt() {
+      getResult(jobId)
+        .then(data => {
+          if (cancelled) return
+          const md = data.prd || ''
+          setPrd(md)
+          setSections(extractH2Sections(md))
+        })
+        .catch(() => {
+          if (!cancelled) setTimeout(attempt, 2000)
+        })
+    }
+    attempt()
+    return () => { cancelled = true }
   }, [jobId])
 
   // 제목 일치 h2 탐색 후 스크롤 이동 — querySelectorAll로 렌더링된 DOM 직접 접근
@@ -49,15 +57,9 @@ export default function Result() {
     }
   }
 
-  // PRD .md 파일 다운로드 (Blob → 임시 URL → <a> 클릭)
+  // PRD .md 파일 직접 다운로드 — GET /result/{jobId}/prd.md
   function handleDownload() {
-    const blob = new Blob([prd], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `prd_${jobId}.md`
-    a.click()
-    URL.revokeObjectURL(url)
+    window.location.href = `/result/${jobId}/prd.md`
   }
 
   return (

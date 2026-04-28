@@ -1,18 +1,8 @@
-# Custom Files
-notes.txt
-.claudeignore
-
 # Mac File
 .DS_Store
 ._.DS_Store
 **/.DS_Store
 **/._.DS_Store
-
-# ---------------------- GitHub .gitignore Python ----------------------
-.claudeignore
-
-# ralph_loop를 위한 권한 허용 (절대 ralph-mode branch 외에는 사용하지 말 것!!)
-.claude/
 
 # React 
 node_modules
@@ -58,7 +48,7 @@ packages/react-devtools-inline/dist
 packages/react-devtools-shell/dist
 packages/react-devtools-timeline/dist
 
-
+# ---------------------- GitHub .gitignore Python ----------------------
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

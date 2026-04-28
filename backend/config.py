@@ -1,3 +1,4 @@
+# 환경변수 로딩 + 필수값 검증 — .env 기반, 누락 시 즉시 EnvironmentError
 import os
 from pathlib import Path
 
@@ -29,4 +30,3 @@ MAX_INNER_LOOPS: int = int(os.getenv("MAX_INNER_LOOPS", "3"))
 BASE_DIR: Path = Path(__file__).parent                  # backend/
 PROJECT_ROOT: Path = BASE_DIR.parent                    # ideavault/
 PROMPTS_DIR: Path = BASE_DIR / "agents" / "prompts"    # backend/agents/prompts/
-LOGS_DIR: Path = PROJECT_ROOT / "docs" / "agent_logs"                  # ideavault/docs/logs/

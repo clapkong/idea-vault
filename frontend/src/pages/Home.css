@@ -18,6 +18,17 @@
   gap: 32px; /* 자식 요소 사이 간격 */
 }
 
+/* 외부 서비스 연결 불안정 경고 배너 */
+.service-warning {
+  background: #FEF3CD;
+  border: 1px solid #D4A843;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #7A5C2E;
+  text-align: center;
+}
+
 /* 상단 캐치프레이즈 */
 .home-catchphrase {
   font-size: 28px;

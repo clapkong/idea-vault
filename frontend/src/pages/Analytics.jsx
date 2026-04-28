@@ -1,5 +1,6 @@
 // 토큰 사용량 통계 대시보드 — 기간 필터, 파이·막대 차트, CSV 내보내기
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState } from 'react'
+import { getAnalytics } from '../api/client'
 import './Analytics.css'
 
 // 기간 필터 탭 레이블 목록
@@ -276,72 +277,35 @@ export default function Analytics() {
   // 데이터 로딩 상태
   const [loading, setLoading] = useState(false)
 
+  // API 응답의 summary, 차트 데이터 직접 사용
+  const [summary, setSummary] = useState({ count: 0, tokens: 0 })
+  const [modelChartData, setModelChartData] = useState([])
+  const [dateChartData, setDateChartData] = useState([])
+
   // range 변경 시 analytics API 재호출
   useEffect(() => {
     setLoading(true)
-    const param = RANGE_PARAMS[range]
-    fetch(`/analytics?range=${param}`)
-      .then(r => r.json())
+    getAnalytics(RANGE_PARAMS[range])
       .then(data => {
-        // backend returns {summary, data} or flat array
-        const rows = Array.isArray(data) ? data : (data.data || [])
-        setRows(rows)
+        setRows(Array.isArray(data) ? data : (data.data || []))
+        if (data.summary) {
+          setSummary({ count: data.summary.total_jobs, tokens: data.summary.total_tokens })
+        }
+        setModelChartData(data.modelAggregates || [])
+        setDateChartData(data.dateAggregates || [])
       })
-      .catch(() => setRows([]))
+      .catch(() => {
+        setRows([])
+        setSummary({ count: 0, tokens: 0 })
+        setModelChartData([])
+        setDateChartData([])
+      })
       .finally(() => setLoading(false))
   }, [range])
 
-  // 총 세션 수·토큰 수 집계 — useMemo: rows 바뀔 때만 재계산, 매 렌더마다 집계 반복 방지
-  const summary = useMemo(() => {
-    const totalTokens = rows.reduce((s, r) => s + (r.tokens || 0), 0)
-    const uniqueJobs = new Set(rows.map(r => r.job_id)).size
-    return { count: uniqueJobs, tokens: totalTokens }
-  }, [rows])
-
-  // 모델별 토큰 합계 집계 (파이 차트용)
-  const modelChartData = useMemo(() => {
-    const acc = {}
-    rows.forEach(r => {
-      const m = r.model || 'unknown'
-      acc[m] = (acc[m] || 0) + (r.tokens || 0)
-    })
-    return Object.entries(acc).map(([label, value]) => ({ label, value }))
-  }, [rows])
-
-  // 날짜별·모델별 토큰 집계 (스택 막대 차트용)
-  const dateChartData = useMemo(() => {
-    const acc = {}
-    rows.forEach(r => {
-      const d = (r.date || '').slice(0, 10)
-      if (!d) return
-      const m = r.model || 'unknown'
-      if (!acc[d]) acc[d] = {}
-      acc[d][m] = (acc[d][m] || 0) + (r.tokens || 0)
-    })
-    return Object.entries(acc)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([label, models]) => ({
-        label,
-        total: Object.values(models).reduce((s, v) => s + v, 0),
-        segments: Object.entries(models).map(([model, value]) => ({ model, value })),
-      }))
-  }, [rows])
-
-  // CSV 생성 후 브라우저 다운로드 트리거 — Blob → 임시 URL → <a> 클릭
+  // 현재 기간 필터 기준 CSV 다운로드 — GET /analytics/csv?range=...
   function handleCSV() {
-    // TODO(backend): serve this CSV directly from FastAPI via pandas for server-side aggregation.
-    const header = ['날짜', 'job_id', '제목', '모델', '토큰']
-    const csvRows = rows.map(r => [
-      r.date || '', r.job_id || '', r.title || '', r.model || '', r.tokens || 0
-    ])
-    const csv = [header, ...csvRows].map(r => r.join(',')).join('\n')
-    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'analytics.csv'
-    a.click()
-    URL.revokeObjectURL(url)
+    window.location.href = `/analytics/csv?range=${RANGE_PARAMS[range]}`
   }
 
   return (

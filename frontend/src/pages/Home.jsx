@@ -1,6 +1,7 @@
 // 홈 페이지 — 아이디어 입력 폼 + 예시 프롬프트 + /generate 제출
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { generateIdea, getReady } from '../api/client'
 import './Home.css'
 
 // 예시 아이디어 목록 (레이블 + 본문)
@@ -21,7 +22,7 @@ const EXAMPLE_PROMPTS = [
 
 // 입력 글자 수 제한
 const MAX_LEN = 500
-const MIN_LEN = 20
+const MIN_LEN = 10
 
 // 홈 메인 컴포넌트
 export default function Home() {
@@ -31,7 +32,17 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   // 유효성 검사·서버 에러 메시지
   const [error, setError] = useState('')
+  const [degraded, setDegraded] = useState(false)
   const navigate = useNavigate()
+
+  // 홈 진입 시 외부 서비스 상태 확인 — 하나라도 degraded면 경고 배너 표시
+  useEffect(() => {
+    getReady()
+      .then(data => {
+        if (data.openrouter !== 'ok' || data.tavily !== 'ok') setDegraded(true)
+      })
+      .catch(() => {})
+  }, [])
 
   // /generate 호출 후 분석 페이지로 이동 — state로 idea 텍스트 전달
   async function handleSubmit() {
@@ -42,15 +53,10 @@ export default function Home() {
     setError('')
     setLoading(true)
     try {
-      const res = await fetch('/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_input: text }),
-      })
-      const data = await res.json()
+      const data = await generateIdea(text)
       navigate(`/analyze/${data.job_id}`, { state: { idea: text } })
     } catch (e) {
-      setError('서버에 연결할 수 없습니다. Mock API 서버가 실행 중인지 확인해주세요.')
+      setError(e.message)
       setLoading(false)
     }
   }
@@ -65,6 +71,9 @@ export default function Home() {
   return (
     <div className="home-page">
       <div className="home-center">
+        {degraded && (
+          <div className="service-warning">일부 서비스 연결이 불안정합니다</div>
+        )}
         <h1 className="home-catchphrase">
           막연한 아이디어도 괜찮아요.<br />
           AI가 함께 다듬어 PRD로 만들어드립니다
