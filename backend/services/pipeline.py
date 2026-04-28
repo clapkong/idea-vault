@@ -29,8 +29,10 @@ def compute_cost(events: list) -> tuple[int, float]:
         if event.get("type") != "agent_done":
             continue
         t = event.get("tokens", 0)
+        # tokens 필드 구버전: 정수, 신버전: {input, output, total} 딕셔너리
         token_total = t.get("total", 0) if isinstance(t, dict) else t
-        model = event.get("model", "")
+        # researcher는 LLM 없이 Tavily 검색만 하므로 model 필드가 None — .lower() 오류 방지
+        model = event.get("model") or ""
         total_tokens += token_total
         key = "haiku" if "haiku" in model.lower() else "sonnet"
         total_cost += token_total * _BLENDED_RATE[key] / 1_000_000
@@ -71,6 +73,8 @@ async def run_pipeline(job_id: str, user_input: str, queue: asyncio.Queue) -> No
     set_block_logger(run_logger)
     set_token_logger(run_logger)
 
+    _final_status = "failed"
+
     try:
         # 최대 30분 제한 — 무한 루프 방지
         result = await asyncio.wait_for(
@@ -106,6 +110,7 @@ async def run_pipeline(job_id: str, user_input: str, queue: asyncio.Queue) -> No
             "cost": total_cost,
         })
         write_meta(job_id, meta)
+        _final_status = "done"
 
     except asyncio.CancelledError:
         # /jobs/{id}/stop 에서 task.cancel() 호출 시 진입
@@ -114,9 +119,11 @@ async def run_pipeline(job_id: str, user_input: str, queue: asyncio.Queue) -> No
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
             meta["status"] = "stopped"
             write_meta(job_id, meta)
+        _final_status = "stopped"
         raise  # CancelledError는 반드시 재전파해야 asyncio가 태스크를 정상 취소로 인식
 
     except Exception as e:
+        logging.exception("[pipeline] job=%s failed", job_id)
         meta_path = job_dir / "meta.json"
         if meta_path.exists():
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
@@ -127,6 +134,6 @@ async def run_pipeline(job_id: str, user_input: str, queue: asyncio.Queue) -> No
         set_block_logger(None)
         set_token_logger(None)
         running_jobs.pop(job_id, None)
-        # 성공·실패·취소 모든 경우에 done 이벤트 삽입 → /stream 루프 종료 보장
-        await queue.put({"type": "done", "job_id": job_id})
+        # status 포함 — 프런트가 성공/실패/중단을 구분할 수 있도록
+        await queue.put({"type": "done", "job_id": job_id, "status": _final_status})
         job_queues.pop(job_id, None)

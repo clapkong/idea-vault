@@ -106,8 +106,12 @@ export default function Analyze() {
       ))
     } else if (data.type === 'done') {
       doneRef.current = true
-      setSessionStatus('done')
-      if (esRef.current) esRef.current.close()
+      // status 필드로 성공/실패/중단 구분 — 없으면 'done' 기본값
+      const status = data.status === 'stopped' ? 'stopped'
+        : data.status === 'failed' ? 'error'
+        : 'done'
+      setSessionStatus(status)
+if (esRef.current) esRef.current.close()
     }
   }
 
@@ -131,6 +135,9 @@ export default function Analyze() {
   const lastPrdIdx = messages.reduce((acc, m, i) => m.agent === 'prd_writer' ? i : acc, -1)
   const displayMessages = messages.filter((m, i) => m.agent !== 'prd_writer' || i === lastPrdIdx)
 
+  // agent_done → agent_start 사이 오케스트레이터 처리 구간: 로딩 버블 없는데 세션 살아있음
+  const isOrchestratorThinking = sessionStatus === 'running' && !messages.some(m => m.loading)
+
   // 세션 상태별 안내 문구 반환
   function getStatusMessage() {
     if (sessionStatus === 'stopped') return '세션이 사용자의 요청으로 종료되었습니다.'
@@ -151,6 +158,12 @@ export default function Analyze() {
           {displayMessages.map(msg => (
             <ChatBubble key={msg.id} message={msg} jobId={jobId} />
           ))}
+          {/* 오케스트레이터 처리 중 — 버블 사이 갭 구간 표시 */}
+          {isOrchestratorThinking && (
+            <div className="orchestrator-thinking">
+              <span className="thinking-dot" /><span className="thinking-dot" /><span className="thinking-dot" />
+            </div>
+          )}
           {/* 세션 종료 안내 */}
           {getStatusMessage() && (
             <div className="session-status-msg">{getStatusMessage()}</div>
