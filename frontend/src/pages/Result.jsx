@@ -57,15 +57,9 @@ export default function Result() {
     }
   }
 
-  // PRD .md 파일 다운로드 (Blob → 임시 URL → <a> 클릭)
+  // PRD .md 파일 직접 다운로드 — GET /result/{jobId}/prd.md
   function handleDownload() {
-    const blob = new Blob([prd], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `prd_${jobId}.md`
-    a.click()
-    URL.revokeObjectURL(url)
+    window.location.href = `/result/${jobId}/prd.md`
   }
 
   return (

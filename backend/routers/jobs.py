@@ -6,11 +6,21 @@
 import json
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 
 from services.pipeline import running_jobs
 from services.storage import DATA_DIR, read_meta, write_meta
 
 router = APIRouter()
+
+
+@router.get("/result/{job_id}/prd.md")
+# prd.md 파일을 첨부 형식(attachment)으로 반환
+async def download_prd(job_id: str):
+    prd_path = DATA_DIR / job_id / "prd.md"
+    if not prd_path.exists():
+        raise HTTPException(status_code=404, detail="PRD not found")
+    return FileResponse(prd_path, media_type="text/markdown", filename=f"prd_{job_id}.md")
 
 
 @router.get("/result/{job_id}")
@@ -29,6 +39,7 @@ async def result(job_id: str):
 
 
 @router.patch("/jobs/{job_id}/favorite")
+# meta.json의 favorite 필드 갱신
 async def toggle_favorite(job_id: str, body: dict):
     favorite = body.get("favorite", False)
     meta = read_meta(job_id)
@@ -47,6 +58,7 @@ async def stop_job(job_id: str):
 
 
 @router.delete("/jobs/{job_id}")
+# meta.json의 deleted 플래그를 true로 설정 (물리 삭제 없음)
 async def delete_job(job_id: str):
     meta = read_meta(job_id)
     meta["deleted"] = True
