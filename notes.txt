@@ -1,7 +1,6 @@
 [TODO 목록]
 [TODO] Dockerfile 작성 — 프로젝트를 컨테이너로 실행 가능
 [TODO] AI log 정리
-[완료] 보안 점검: 의존성에 알려진 취약점이 없는지 확인 (pip audit 또는 유사 도구)
 [TODO] Merge to Develop
 [TODO] GitHub CI/CD 
 [TODO] FORCE PRD가 critics 바로 다음에 실행되는 문제 (42378efb) -> 아주 나중에 (GitHub CI/CD)
