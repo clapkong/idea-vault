@@ -186,6 +186,13 @@ async def analytics(range: str = "all"):
     return await real_analytics(range)
 
 
+@router.get("/analytics/csv")
+# real analytics_csv 라우터에 위임
+async def analytics_csv(range: str = "all"):
+    from routers.analytics import analytics_csv as real_analytics_csv
+    return await real_analytics_csv(range)
+
+
 @router.patch("/jobs/{job_id}/favorite")
 # meta.json의 favorite 필드 갱신
 async def toggle_favorite(job_id: str, body: dict):
