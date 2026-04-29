@@ -1,3 +1,55 @@
+# Mac File
+.DS_Store
+._.DS_Store
+**/.DS_Store
+**/._.DS_Store
+
+# React 
+node_modules
+scripts/flow/*/.flowconfig
+.flowconfig
+*~
+*.pyc
+.grunt
+_SpecRunner.html
+__benchmarks__
+build/
+remote-repo/
+coverage/
+.module-cache
+fixtures/dom/public/react-dom.js
+fixtures/dom/public/react.js
+test/the-files-to-test.generated.js
+*.log*
+!data/agent_logs/*.log
+chrome-user-data
+*.sublime-project
+*.sublime-workspace
+.idea
+*.iml
+.vscode
+.zed
+*.swp
+*.swo
+/tmp
+/.worktrees
+.claude/*.local.*
+
+packages/react-devtools-core/dist
+packages/react-devtools-extensions/chrome/build
+packages/react-devtools-extensions/chrome/*.crx
+packages/react-devtools-extensions/chrome/*.pem
+packages/react-devtools-extensions/firefox/build
+packages/react-devtools-extensions/firefox/*.xpi
+packages/react-devtools-extensions/firefox/*.pem
+packages/react-devtools-extensions/shared/build
+packages/react-devtools-extensions/.tempUserDataDir
+packages/react-devtools-fusebox/dist
+packages/react-devtools-inline/dist
+packages/react-devtools-shell/dist
+packages/react-devtools-timeline/dist
+
+# ---------------------- GitHub .gitignore Python ----------------------
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -56,7 +108,6 @@ cover/
 *.pot
 
 # Django stuff:
-*.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
