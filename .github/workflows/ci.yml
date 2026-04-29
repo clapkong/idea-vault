@@ -23,7 +23,7 @@ jobs:
           TAVILY_API_KEY: "test-key"
           MAX_OUTER_LOOPS: "3"
           MAX_INNER_LOOPS: "3"
-          USE_MOCK_MODE: "true"
+          USE_MOCK_MODE: "false"
         run: |
           cd backend
           pip install -r requirements.txt
