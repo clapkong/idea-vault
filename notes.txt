@@ -1,9 +1,8 @@
 [TODO 목록]
-[TODO] Dockerfile 작성 — 프로젝트를 컨테이너로 실행 가능
 [TODO] AI log 정리
-[TODO] Merge to Develop
 [TODO] GitHub CI/CD 
 [TODO] FORCE PRD가 critics 바로 다음에 실행되는 문제 (42378efb) -> 아주 나중에 (GitHub CI/CD)
+[TODO] 데모영상 찍기
 
 사용한 오픈소스
 pip install fastapi "uvicorn[standard]" sse-starlette langchain-core langchain-openai python-dotenv pan

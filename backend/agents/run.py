@@ -50,8 +50,8 @@ def main():
     print(result["prd"][:800])
     print("...")
 
-    # 전체 PRD를 logs/ 디렉터리에 마크다운 파일로 저장
-    logs_dir = Path(__file__).parent.parent.parent / "docs" / "generated_prds"
+    # 전체 PRD를 data/agent_logs/ 디렉터리에 마크다운 파일로 저장
+    logs_dir = Path(__file__).parent.parent.parent / "data" / "agent_logs" / "generated_prds"
     logs_dir.mkdir(parents=True, exist_ok=True)
     out_path = logs_dir / f"prd_{result['job_id']}.md"
     out_path.write_text(result["prd"], encoding="utf-8")
