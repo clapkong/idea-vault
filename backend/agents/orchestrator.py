@@ -10,15 +10,13 @@ from datetime import datetime
 from deepagents import create_deep_agent
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from langchain_openai import ChatOpenAI
 
 from config import (
     MAX_OUTER_LOOPS, MAX_INNER_LOOPS,
     MODEL_STRONG, MODEL_LIGHT,
-    OPENROUTER_API_KEY, OPENROUTER_BASE_URL,
     PROMPTS_DIR,
 )
-from agents.llm import log_line, log_block
+from agents.llm import log_line, log_block, create_llm
 from agents.subagents.planner import planner_agent
 from agents.subagents.researcher import researcher_agent
 from agents.subagents.analyst import analyst_agent
@@ -321,11 +319,8 @@ async def run(
         .replace("{user_conditions}", user_conditions)
     )
 
-    llm = ChatOpenAI(
-        model=MODEL_STRONG,
-        api_key=OPENROUTER_API_KEY,
-        base_url=OPENROUTER_BASE_URL,
-    )
+    llm = create_llm(MODEL_STRONG)
+    
     orchestrator = create_deep_agent(
         model=llm,
         tools=[

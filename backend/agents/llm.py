@@ -7,7 +7,9 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.outputs import LLMResult
 from langchain_openai import ChatOpenAI
 
-from config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL, PROMPTS_DIR
+from config import OPENROUTER_API_KEY, PROMPTS_DIR
+
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
 # ContextVar — asyncio task마다 독립적인 로거 유지 (동시 실행 안전)
@@ -129,14 +131,13 @@ def load_prompt(agent_name: str) -> str:
 
 # OpenRouter 백엔드로 ChatOpenAI 인스턴스 생성
 # agent_name 지정 시 run.log에 에이전트별 블록 형식으로 I/O 기록
-def create_llm(model: str, max_tokens: int = 1024, agent_name: str = "") -> ChatOpenAI:
-    return ChatOpenAI(
-        model=model,
-        api_key=OPENROUTER_API_KEY,
-        base_url=OPENROUTER_BASE_URL,
-        max_tokens=max_tokens,
-        callbacks=[_TokenHandler(model, agent_name)],
-    )
+def create_llm(model: str, max_tokens: int | None = None, agent_name: str = "") -> ChatOpenAI:
+    kwargs: dict = dict(model=model, api_key=OPENROUTER_API_KEY, base_url=OPENROUTER_BASE_URL)
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
+    if agent_name:
+        kwargs["callbacks"] = [_TokenHandler(model, agent_name)]
+    return ChatOpenAI(**kwargs)
 
 
 # AIMessage에서 텍스트 추출, content가 list(멀티모달)이면 text 블록만 이어붙임
