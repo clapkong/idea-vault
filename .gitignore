@@ -21,6 +21,7 @@ fixtures/dom/public/react-dom.js
 fixtures/dom/public/react.js
 test/the-files-to-test.generated.js
 *.log*
+!data/agent_logs/*.log
 chrome-user-data
 *.sublime-project
 *.sublime-workspace
