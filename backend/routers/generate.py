@@ -1,4 +1,7 @@
-# POST /generate — 아이디어 분석 요청 접수 (real mode)
+# POST /generate — 새 job 생성 및 AI 파이프라인 백그라운드 실행 (real mode)
+#
+# 흐름: 요청 수신 → job 디렉토리/meta.json 생성 → asyncio.Task로 파이프라인 띄움 → job_id 즉시 반환
+# 클라이언트는 반환받은 job_id로 GET /stream/{job_id} 에 연결해 진행 상황을 SSE로 수신.
 import asyncio
 import logging
 from datetime import datetime

@@ -1,6 +1,17 @@
-# 백그라운드 파이프라인 실행 레이어
-# job별 asyncio.Queue(이벤트 스트림)와 asyncio.Task(실행 핸들)를 메모리에서 관리
-# 프로세스 재시작 시 두 딕셔너리는 초기화되므로 진행 중 재시작 → stream 연결 불가
+# AI 파이프라인 비동기 실행 레이어
+#
+# 역할:
+#   POST /generate 요청이 오면 즉시 job_id를 반환하고, orchestrator는 백그라운드에서 실행.
+#   실행 중 발생하는 SSE 이벤트를 asyncio.Queue에 넣어 /stream 엔드포인트로 흘려줌.
+#   완료/실패/중단 시 result.json, prd.md, meta.json을 data/jobs/{job_id}/ 에 저장.
+#
+# 사용처:
+#   routers/generate.py — run_pipeline 호출, job_queues/running_jobs 등록
+#   routers/stream.py   — job_queues 조회 (SSE 연결)
+#   routers/jobs.py     — running_jobs 조회 (stop 요청 시 task 취소)
+#
+# 주의: job_queues/running_jobs는 메모리 딕셔너리이므로 프로세스 재시작 시 초기화됨.
+#       실행 중 재시작하면 해당 job의 /stream 연결이 끊김.
 import asyncio
 import json
 import logging
@@ -8,35 +19,23 @@ from pathlib import Path
 
 from services.storage import DATA_DIR, write_meta
 
-# job_id → asyncio.Queue: orchestrator가 emit한 SSE 이벤트를 /stream 엔드포인트로 전달
+# asyncio.Queue: 생산자(orchestrator)와 소비자(/stream)를 잇는 비동기 채널.
+# orchestrator가 이벤트를 put() → /stream이 get()해서 SSE로 전송.
 job_queues: dict[str, asyncio.Queue] = {}
-# job_id → asyncio.Task: /jobs/{id}/stop 에서 task.cancel()로 파이프라인 중단
+
+# asyncio.Task: 백그라운드로 돌고 있는 파이프라인 핸들.
+# task.cancel()을 호출하면 실행 중인 await 지점에서 CancelledError가 발생해 파이프라인을 중단시킴.
 running_jobs: dict[str, asyncio.Task] = {}
 
-# per-agent 토큰 비용 — prompt/completion 분리 없이 blended rate 적용
-# 30% prompt / 70% completion 가정: haiku ≈ $0.95/1M, sonnet ≈ $11.4/1M
-_BLENDED_RATE = {
-    "haiku":  0.95,
-    "sonnet": 11.4,
-}
-
-
-def compute_cost(events: list) -> tuple[int, float]:
-    """agent_done 이벤트에서 모델별 토큰을 읽어 총 토큰 수와 비용($)을 계산."""
-    total_tokens = 0
-    total_cost = 0.0
+def compute_tokens(events: list) -> int:
+    """agent_done 이벤트에서 총 토큰 수 집계."""
+    total = 0
     for event in events:
         if event.get("type") != "agent_done":
             continue
         t = event.get("tokens", 0)
-        # tokens 필드 구버전: 정수, 신버전: {input, output, total} 딕셔너리
-        token_total = t.get("total", 0) if isinstance(t, dict) else t
-        # researcher는 LLM 없이 Tavily 검색만 하므로 model 필드가 None — .lower() 오류 방지
-        model = event.get("model") or ""
-        total_tokens += token_total
-        key = "haiku" if "haiku" in model.lower() else "sonnet"
-        total_cost += token_total * _BLENDED_RATE[key] / 1_000_000
-    return total_tokens, round(total_cost, 6)
+        total += t.get("total", 0) if isinstance(t, dict) else t
+    return total
 
 
 def _make_run_logger(log_path: Path) -> logging.Logger:
@@ -63,6 +62,8 @@ async def run_pipeline(job_id: str, user_input: str, queue: asyncio.Queue) -> No
       4. 기타 예외 → meta status = 'failed'
       5. finally 블록에서 반드시 {'type': 'done'} 큐에 삽입 → /stream 연결 정상 종료 보장
     """
+    # 함수 안에서 import하는 이유: orchestrator는 무겁고 mock 모드에서는 아예 불필요.
+    # 모듈 상단에 두면 앱 시작 시 항상 로드되므로 필요한 시점에만 import.
     from agents.llm import set_block_logger, set_token_logger
     from agents.orchestrator import run as orchestrator_run
 
@@ -76,10 +77,10 @@ async def run_pipeline(job_id: str, user_input: str, queue: asyncio.Queue) -> No
     _final_status = "failed"
 
     try:
-        # 최대 30분 제한 — 무한 루프 방지
+        # asyncio.wait_for: timeout 초 안에 완료되지 않으면 자동으로 CancelledError 발생.
         result = await asyncio.wait_for(
             orchestrator_run(user_input, job_id=job_id, event_queue=queue),
-            timeout=1800,
+            timeout=1800,  # 최대 30분
         )
         duration = round(asyncio.get_event_loop().time() - start_time, 1)
 
@@ -100,14 +101,13 @@ async def run_pipeline(job_id: str, user_input: str, queue: asyncio.Queue) -> No
         # 최종 산출물 — 사람이 직접 읽을 수 있는 마크다운 형태로 별도 보존
         (job_dir / "prd.md").write_text(result["prd"], encoding="utf-8")
 
-        total_tokens, total_cost = compute_cost(result.get("events", []))
+        total_tokens = compute_tokens(result.get("events", []))
 
         meta = json.loads((job_dir / "meta.json").read_text(encoding="utf-8"))
         meta.update({
             "status": "done",
             "duration_sec": duration,
             "tokens": total_tokens,
-            "cost": total_cost,
         })
         write_meta(job_id, meta)
         _final_status = "done"
@@ -120,7 +120,7 @@ async def run_pipeline(job_id: str, user_input: str, queue: asyncio.Queue) -> No
             meta["status"] = "stopped"
             write_meta(job_id, meta)
         _final_status = "stopped"
-        raise  # CancelledError는 반드시 재전파해야 asyncio가 태스크를 정상 취소로 인식
+        raise  # CancelledError를 삼키면 asyncio가 태스크가 취소됐는지 알 수 없어서 반드시 재전파해야 함
 
     except Exception as e:
         logging.exception("[pipeline] job=%s failed", job_id)

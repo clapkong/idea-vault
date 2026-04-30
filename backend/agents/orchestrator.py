@@ -26,7 +26,8 @@ from agents.subagents.prd_writer import prd_writer_agent
 
 
 # ── Module state (initialized fresh in each run()) ───────────────────────────
-# run() 호출마다 초기화되는 전역 상태 (멀티 run 지원을 위해 run() 시작 시 리셋)
+# @tool 함수들은 인자를 LLM이 결정하므로 job별 공유 상태를 인자로 넘길 수 없음.
+# 대신 모듈 전역 변수로 두고 run() 시작 시 초기화. job이 순차 실행되는 한 안전.
 _event_queue: asyncio.Queue | None = None  # SSE 브릿지 (None이면 CLI 모드)
 _events: list = []                         # 전체 이벤트 수집 (run() 반환용)
 _user_conditions: str = ""                 # 사용자 입력 조건
@@ -47,6 +48,8 @@ async def _emit(event: dict) -> None:
 
 
 # ── Tools ─────────────────────────────────────────────────────────────────────
+# @tool: LangChain 데코레이터. 함수를 LLM이 호출할 수 있는 도구로 등록.
+# LLM이 어떤 툴을 언제 어떤 인자로 부를지 스스로 판단해서 실행함 (함수 시그니처와 docstring 기반).
 
 # planner_agent 호출 후 결과를 _current_topic에 저장
 @tool

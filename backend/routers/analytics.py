@@ -1,4 +1,8 @@
 # GET /analytics?range=all|today|7days|30days — 토큰 사용량 통계 (real mode)
+#
+# 완료된 job들의 result.json events에서 모델별 토큰을 집계해 차트 데이터로 반환.
+# /analytics/csv 는 동일 데이터를 CSV 파일로 다운로드.
+# mock 모드에서는 routers/mock.py가 이 함수에 위임.
 import io
 import json
 from collections import defaultdict
@@ -46,8 +50,7 @@ async def analytics(range: str = "all"):
     ]
 
     # job별 result.json events에서 model별 토큰 집계
-    # status 대신 result.json 존재 여부로 판단 — compute_cost 실패 등으로 status가
-    # failed여도 PRD가 완성된 경우 집계에 포함하기 위함
+    # status 대신 result.json 존재 여부로 판단 — status가 failed여도 PRD 완성 시 집계 포함
     rows = []
     for item in all_items:
         job_id = item["job_id"]

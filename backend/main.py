@@ -1,8 +1,7 @@
 # FastAPI 앱 진입점 — 앱 생성, CORS 설정, 라우터 등록만 담당
 # USE_MOCK_MODE 분기는 여기서 한 번만 수행 — real mode가 기본 경로
-from pathlib import Path
-
 import os
+from pathlib import Path
 
 import requests
 from dotenv import load_dotenv

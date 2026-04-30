@@ -12,7 +12,9 @@ from config import OPENROUTER_API_KEY, PROMPTS_DIR
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
-# ContextVar — asyncio task마다 독립적인 로거 유지 (동시 실행 안전)
+# contextvars.ContextVar: 일반 전역 변수처럼 보이지만 asyncio task마다 독립적인 값을 가짐.
+# 여러 job이 동시에 실행될 때 각자의 로거가 섞이지 않도록 task 단위로 격리.
+# (일반 전역 변수를 쓰면 job A의 로거가 job B의 로그를 덮어쓸 수 있음)
 _token_logger_ctx: contextvars.ContextVar[logging.Logger | None] = contextvars.ContextVar(
     "token_logger", default=None
 )
@@ -51,12 +53,15 @@ def log_block(agent_name: str, input_text: str, output_text: str) -> None:
     logger.info(block)
 
 
-# LangChain 콜백 핸들러 — LLM 호출마다 토큰 카운트·입출력 블록을 run.log에 기록
+# BaseCallbackHandler: LangChain이 LLM 호출 전후에 자동으로 불러주는 훅 클래스.
+# create_llm()에서 callbacks=[_TokenHandler(...)]로 등록하면
+# LLM이 호출될 때마다 on_chat_model_start → (LLM 실행) → on_llm_end 순서로 호출됨.
 class _TokenHandler(BaseCallbackHandler):
     def __init__(self, model: str, agent_name: str = ""):
         self.model = model
         self.agent_name = agent_name
-        # run_id → HumanMessage 내용 임시 저장 (on_chat_model_start → on_llm_end 구간)
+        # on_chat_model_start에서 입력을 저장해뒀다가 on_llm_end에서 꺼내 쓰기 위한 임시 저장소.
+        # run_id를 키로 쓰는 이유: 동시에 여러 LLM 호출이 있을 때 어떤 입력이 어떤 출력과 쌍인지 구분하기 위함.
         self._pending: dict[str, str] = {}
 
     # LLM 호출 직전 — HumanMessage 내용을 run_id 키로 임시 저장
