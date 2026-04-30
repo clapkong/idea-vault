@@ -20,7 +20,6 @@ MODEL_LIGHT: str = _require("MODEL_LIGHT")
 
 # OpenRouter API 접속 정보
 OPENROUTER_API_KEY: str = _require("OPENROUTER_API_KEY") # Key = 필수
-OPENROUTER_BASE_URL: str = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")  # 웹 검색용, 미설정 시 검색 비활성화
 
 # 오케스트레이터 루프 횟수 상한 (기본값 각 3회)

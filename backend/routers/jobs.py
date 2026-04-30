@@ -1,8 +1,11 @@
-# job 개별 조작 라우터 (real mode)
-#   GET    /result/{job_id}        — PRD·loop_history·events 반환
-#   PATCH  /jobs/{job_id}/favorite — 즐겨찾기 토글
-#   POST   /jobs/{job_id}/stop     — 실행 중 파이프라인 중단
-#   DELETE /jobs/{job_id}          — 소프트 삭제 (물리 삭제 금지)
+# 완료된 job 조회 및 개별 조작 라우터 (real mode)
+#
+# 엔드포인트:
+#   GET    /result/{job_id}/prd.md  — PRD 마크다운 파일 다운로드
+#   GET    /result/{job_id}         — PRD·loop_history·events JSON 반환 (파이프라인 완료 후)
+#   PATCH  /jobs/{job_id}/favorite  — 즐겨찾기 토글
+#   POST   /jobs/{job_id}/stop      — 실행 중 파이프라인 중단 (task.cancel → CancelledError)
+#   DELETE /jobs/{job_id}           — 소프트 삭제 (meta.json의 deleted 플래그만 변경, 파일 보존)
 import json
 
 from fastapi import APIRouter, HTTPException

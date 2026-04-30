@@ -1,5 +1,18 @@
-# real mode 파일 I/O 레이어 — data/jobs/ 기반 job 영속화
-# USE_MOCK_MODE 상수도 여기서 관리 (main.py에서 분기 판단용)
+# 파일 시스템 기반 job 영속화 레이어
+#
+# 역할:
+#   data/jobs/{job_id}/ 폴더를 DB 대신 사용. meta.json 읽기/쓰기,
+#   전체 job 목록 스캔(load_history), PRD 제목 추출 등 파일 I/O를 한 곳에 모아둠.
+#   여러 라우터가 같은 파일을 읽고 써야 하므로 공통 레이어로 분리.
+#
+# 사용처:
+#   routers/generate.py  — DATA_DIR, write_meta
+#   routers/jobs.py      — DATA_DIR, read_meta, write_meta
+#   routers/history.py   — load_history
+#   routers/analytics.py — DATA_DIR, load_history
+#   routers/mock.py      — 위 전부
+#   services/pipeline.py — DATA_DIR, write_meta
+#   main.py              — USE_MOCK_MODE (real/mock 라우터 분기 판단용)
 import json
 import os
 from pathlib import Path
@@ -76,7 +89,6 @@ def load_history() -> list[dict]:
             "duration_sec": meta.get("duration_sec", 0),
             "status": meta.get("status", ""),
             "tokens": meta.get("tokens", 0),
-            "cost": meta.get("cost", 0.0),
         })
 
     items.sort(key=lambda x: x["created_at"], reverse=True)

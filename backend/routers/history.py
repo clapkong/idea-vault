@@ -1,4 +1,7 @@
-# GET /history — 삭제되지 않은 job 목록 반환 (real mode)
+# GET /history — job 목록 조회 (real mode)
+#
+# storage.load_history()로 data/jobs/ 전체 스캔 후 삭제·검색·즐겨찾기·정렬 필터 적용해 반환.
+# mock 모드에서는 routers/mock.py가 이 함수에 위임.
 from fastapi import APIRouter, Query
 
 from services.storage import load_history
